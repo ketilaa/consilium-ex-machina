@@ -18,6 +18,23 @@ DECISIONS = [
         "category": "Integration architecture (no direct entry in the owner table — mapped to Architect as fallback)",
         "owner_role": "Architect",
         "challenger_roles": ["Backend Developer", "Release Manager"],
+        "dissent": {
+            "role": "Release Manager",
+            "objection": (
+                "In-process pub/sub means the entire agent coordination layer dies with "
+                "the process. If one agent's event handler throws an unhandled exception "
+                "the process can crash or be left corrupted, and since there is no "
+                "persistence layer, every event that hasn't been consumed yet is gone "
+                "permanently with no record it ever existed. The platform's own design "
+                "depends on events being the durable unit of coordination and history — a "
+                "mechanism that can silently and irrecoverably lose events on the very "
+                "first unhandled crash is not acceptable for v1, no matter how much "
+                "simpler it is to build. 'We can add monitoring later' does not un-lose an "
+                "event that is already gone. I will not accept this without either a "
+                "persisted event log that survives a process crash, or a concrete argument "
+                "for why permanent event loss is actually tolerable for v1's real use case."
+            ),
+        },
     },
     {
         "slug": "work-item-persistence",
@@ -32,6 +49,25 @@ DECISIONS = [
         "category": "Database strategy",
         "owner_role": "Backend Developer",
         "challenger_roles": ["Architect", "Performance Reviewer"],
+        "dissent": {
+            "role": "Architect",
+            "objection": (
+                "Neo4j Community Edition — the only realistically free option for a "
+                "bootstrapped v1 — has no built-in clustering or hot backup. A "
+                "single-instance deployment with no replication is a single point of data "
+                "loss for the platform's entire decision, evidence, and history record — "
+                "which is meant to be the durable source of truth for the whole "
+                "engineering process. Losing that store isn't like losing a cache, it's "
+                "losing the audited history the platform's entire value proposition "
+                "depends on. A relational database gets mature, boring, well-understood "
+                "backup and replication essentially for free from any hosting provider. I "
+                "will not accept graph-native query convenience as sufficient "
+                "justification for a materially higher data-loss risk on the system whose "
+                "entire job is being the trustworthy record of what was decided and why — "
+                "unless there is a concrete, Neo4j-specific backup/replication plan, not a "
+                "generic 'backups can be managed'."
+            ),
+        },
     },
     {
         "slug": "api-authentication",
@@ -45,5 +81,25 @@ DECISIONS = [
         "category": "Authentication",
         "owner_role": "Security Reviewer",
         "challenger_roles": ["Backend Developer", "Architect"],
+        "dissent": {
+            "role": "Architect",
+            "objection": (
+                "If machine agents hold long-lived bearer tokens to call the API from "
+                "other processes or machines, then a single compromised agent process — "
+                "and this platform's entire premise is running semi-autonomous AI agents "
+                "that execute somewhat unpredictable actions — leaks a token that grants "
+                "the same access as any other caller, for as long as the token or its "
+                "refresh chain remains valid, with no session to invalidate the way a "
+                "cookie-based session can be revoked server-side instantly. This "
+                "platform's threat model specifically includes the agents themselves, not "
+                "just human attackers. I will not accept a bare bearer-token scheme "
+                "without a concrete, specific mechanism for immediate, individual token "
+                "revocation independent of expiry — 'short-lived tokens with refresh' "
+                "still leaves a live window, and 'JWTs can be revoked' is not "
+                "automatically true, since that requires a server-side denylist or "
+                "equivalent, which reintroduces exactly the statefulness this proposal "
+                "claims to avoid."
+            ),
+        },
     },
 ]

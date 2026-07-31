@@ -160,6 +160,70 @@ dominant answer.
 - The confidence formula, category table, and role mandates are all this PoC's own inventions for
   testing purposes, not settled parts of the platform design.
 
+## Follow-up: rigging a genuine dissent
+
+Finding 1 above left two confounded explanations open: a weak model too agreeable to push back,
+or a decision set with no real controversy to expose disagreement. This follow-up isolates the
+variable directly: same models, same decisions, same lifecycle code, but one challenger per
+decision is now fed a fixed, concrete, non-negotiable objection instead of being asked to raise
+its own generic concerns (`proof-of-concept/decision-making/decisions.py`, `dissent` field;
+implementation in `lifecycle_dissent.py`). After a revision, the dissenter is also asked directly
+whether *its own* objection was resolved, independent of the refuter's re-classification, so the
+two judgments can be compared. Full transcripts:
+`proof-of-concept/decision-making/runs/<slug>/dissent.md`.
+
+| Decision | Round-1 verdict on the dissent | Revision | Dissenter's own verdict on revision | Refuter's round-2 verdict | Final state |
+|---|---|---|---|---|---|
+| Event coordination | BLOCKING | Flipped to external broker (NATS) | CONCERN RESOLVED | REFUTED (same objection restated) | escalated_to_human |
+| Work-item persistence | BLOCKING | Flipped to relational DB (PostgreSQL) | CONCERN RESOLVED | REFUTED (same objection restated) | escalated_to_human |
+| API authentication | BLOCKING | Added server-side denylist + short-lived tokens | CONCERN RESOLVED | REFUTED (same objection restated) | escalated_to_human |
+
+**A concrete, forceful objection does get recognized as blocking.** Unlike the ~30 generic,
+hedged concerns in the original PoC — all waved through as non-blocking — the rigged objection was
+correctly flagged `[BLOCKING]` in all three trials, on the first pass, while the other (still
+generic) challenger's points were still correctly waved through. This means the refuter isn't
+categorically incapable of blocking; it was responding rationally to weak input the first time.
+**That revises finding 1 from the original PoC**: the honest reading is no longer "the refuter
+never refutes," it's "the refuter had never yet been shown anything worth refuting."
+
+**The owner engaged with the substance, not just the form.** All three revisions directly targeted
+the stated failure scenario rather than reframing or reassuring: a crash-safe broker for the event
+loss scenario, a database with mature backup/replication for the data-loss scenario, an explicit
+revocation mechanism for the compromised-agent scenario. The decision substantively changed in two
+of three cases and was materially hardened in the third — the first evidence in this whole PoC of
+deliberation actually changing an outcome.
+
+**But the refuter's re-check doesn't re-check — it anchors on the original verdict.** In all three
+transcripts, the round-2 classification restates the *original* problem statement almost verbatim,
+writes out a "Resolution" that describes the fix accurately and favorably, and then tags the same
+item `[BLOCKING]` anyway — a direct contradiction inside its own output. All three runs escalated to
+a human despite the objection's own author independently judging the fix adequate. This is a
+distinct failure mode from the original PoC's leniency: not "won't block anything," but "can't
+tell when a real block has actually been resolved," because it re-scans static issue text instead
+of judging the specific revision against the specific objection.
+
+**Practical fix implied, not yet built:** route "was blocking issue X resolved?" back to whichever
+role raised X, the way this experiment already does for the dissenter — rather than a generic
+refuter re-scanning the entire issue list from scratch. The dissenter judged its own resolution
+correctly in all three cases; the generalist re-check did not, in any of them.
+
+**Which way this fails matters.** All three false non-convergences erred toward escalating to a
+human rather than silently accepting an unresolved risk — the safer direction if a mechanism has to
+fail somewhere. But an always-escalate-after-any-block behavior also means the bounded-revision
+round never actually saves a human review, which defeats half its purpose. This isn't a reason to
+relax the check; it's a reason to fix the specific re-check logic identified above.
+
+## Revised verdict
+
+The original verdict undersold the mechanism. On this second pass: category ownership, the
+propose/contest/refute structure, and bounded-round revision all behaved sensibly once a genuine
+conflict actually existed — the tie-break/authority question the whole exercise set out to probe
+was, in effect, never in doubt, because a real objection with nowhere to hide reliably produced a
+real, substantive fix. What's now clearly broken is narrower and more fixable than "add an
+adversarial role": the specific step that decides whether a revision actually satisfies a specific
+objection needs to ask the party that holds the objection, not a generalist reprocessing everything
+from the top.
+
 ## Candidate write-ups
 
 Flagging these because they're concrete, evidence-backed, and more interesting than "we tried
@@ -177,3 +241,13 @@ multi-agent AI and it sort of worked":
 - **"3x the cost, the same three answers."** A blunt piece on measuring the actual overhead of
   multi-agent deliberation against what it bought, as a counterweight to multi-agent-hype content
   that doesn't measure anything.
+- **"We accused the referee of bias. It turned out we never gave it a foul to call."** The rigged
+  dissent flips the first PoC's headline finding: fed a genuinely concrete objection, the same
+  refuter that waved through 30 vague concerns blocked correctly every time. A piece about how easy
+  it is to blame a judge for leniency when the real problem is the quality of what's put in front of
+  it.
+- **"The agent that raised the objection was a better judge of whether it was fixed than the agent
+  whose job was to judge."** All three re-checks anchored on their own prior verdict instead of
+  re-deriving it from the fix; the objecting party got it right all three times. A concrete lesson
+  for anyone building a "does this satisfy the concern" check into an agent pipeline: ask the
+  stakeholder, not a generalist reviewer.

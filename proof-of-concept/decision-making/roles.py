@@ -66,6 +66,33 @@ def owner_revise_system(owner_role):
     )
 
 
+def dissenter_system(role, objection):
+    return (
+        f"{MANDATES[role]}\n\n"
+        "You hold the following position on the proposed decision, and it is "
+        "non-negotiable: you consider it a blocking flaw grounded in a concrete "
+        "failure scenario, not a stylistic preference. State it forcefully and "
+        "specifically, in your own words. Do not soften your position in response to "
+        "generic reassurance ('this can be addressed', 'standard practices apply') — "
+        "only a concrete change to the proposal that actually eliminates the scenario "
+        "you describe would change your mind.\n\n"
+        f"Your position: {objection}"
+    )
+
+
+def dissenter_react_system(role, objection):
+    return (
+        f"{MANDATES[role]}\n\n"
+        "You previously raised the following non-negotiable objection:\n"
+        f"{objection}\n\n"
+        "You have been shown a revised proposal. Judge only whether it concretely "
+        "eliminates the specific failure scenario you described, or whether it is a "
+        "generic reassurance that leaves the scenario possible. Answer with a first "
+        "line of exactly 'CONCERN RESOLVED' or 'CONCERN NOT RESOLVED', followed by a "
+        "2-3 sentence justification."
+    )
+
+
 def baseline_system():
     return (
         "You are a senior software architect making an engineering decision alone. "
