@@ -1,0 +1,162 @@
+[
+  {
+    "slug": "reminder-job",
+    "condition": "none",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 112,
+    "seconds": 44.4
+  },
+  {
+    "slug": "reminder-job",
+    "condition": "full_dump",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 8046,
+    "seconds": 196.0
+  },
+  {
+    "slug": "reminder-job",
+    "condition": "packet",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 5362,
+    "seconds": 132.1
+  },
+  {
+    "slug": "reminder-job",
+    "condition": "full_dump_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 8046,
+    "seconds": 60.9
+  },
+  {
+    "slug": "reminder-job",
+    "condition": "packet_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 5362,
+    "seconds": 63.9
+  },
+  {
+    "slug": "lower-threshold",
+    "condition": "none",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 108,
+    "seconds": 48.3
+  },
+  {
+    "slug": "lower-threshold",
+    "condition": "full_dump",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 8042,
+    "seconds": 65.9
+  },
+  {
+    "slug": "lower-threshold",
+    "condition": "packet",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 4222,
+    "seconds": 113.0
+  },
+  {
+    "slug": "lower-threshold",
+    "condition": "full_dump_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 8042,
+    "seconds": 58.2
+  },
+  {
+    "slug": "lower-threshold",
+    "condition": "packet_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 4222,
+    "seconds": 55.7
+  },
+  {
+    "slug": "cancel-endpoint",
+    "condition": "none",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 95,
+    "seconds": 51.0
+  },
+  {
+    "slug": "cancel-endpoint",
+    "condition": "full_dump",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 8029,
+    "seconds": 86.5
+  },
+  {
+    "slug": "cancel-endpoint",
+    "condition": "packet",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 5580,
+    "seconds": 117.0
+  },
+  {
+    "slug": "cancel-endpoint",
+    "condition": "full_dump_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 8029,
+    "seconds": 59.1
+  },
+  {
+    "slug": "cancel-endpoint",
+    "condition": "packet_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 5580,
+    "seconds": 66.8
+  },
+  {
+    "slug": "silent-notification-failure",
+    "condition": "none",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 80,
+    "seconds": 34.1
+  },
+  {
+    "slug": "silent-notification-failure",
+    "condition": "full_dump",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 8014,
+    "seconds": 31.3
+  },
+  {
+    "slug": "silent-notification-failure",
+    "condition": "packet",
+    "model": "14B",
+    "ok": true,
+    "prompt_tokens": 3805,
+    "seconds": 60.5
+  },
+  {
+    "slug": "silent-notification-failure",
+    "condition": "full_dump_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 8014,
+    "seconds": 59.7
+  },
+  {
+    "slug": "silent-notification-failure",
+    "condition": "packet_7b",
+    "model": "7B",
+    "ok": true,
+    "prompt_tokens": 3805,
+    "seconds": 52.8
+  }
+]
