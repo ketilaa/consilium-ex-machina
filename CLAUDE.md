@@ -13,10 +13,24 @@ Decision-making / consensus mechanics: [docs/design/decision-making.md](docs/des
 
 ## Current phase
 
-Design phase. There is no implementation yet — only the documents under `docs/`. Before proposing
-code structure or starting implementation, read the architecture doc; the domain model (work items,
-decisions, questions, events) should exist and be well-understood before any agent orchestration is
-built on top of it.
+Design phase for the platform itself — no production/platform code yet. But the riskiest,
+most load-bearing assumptions behind the design are being validated with real proof-of-concept
+experiments (under `proof-of-concept/*/`, run against local models) before any platform code gets
+written, rather than argued from first principles alone. Findings are written up in `docs/learning/`:
+
+- [poc-decision-making.md](docs/learning/poc-decision-making.md) — the propose/contest/refute/
+  converge lifecycle and the ownership/veto authority model. Validated, including a real bug found
+  and fixed along the way (the re-check step anchoring on a stale verdict instead of re-deriving it).
+- [poc-context-packets.md](docs/learning/poc-context-packets.md) — rule-based Context Packet
+  construction vs. full-repo dump vs. no context. Validated decisively: full-dump silently
+  truncates on smaller-context models while the packet doesn't, at meaningfully lower token cost
+  even on models that can fit the full dump.
+
+Next candidate, not yet started: whether agents reliably raise genuine clarifying Questions instead
+of guessing under ambiguity (the "Questions are first-class citizens" pillar).
+
+Before proposing platform code structure, read the architecture doc and the PoC findings above; the
+domain model should stay grounded in what's actually been tested, not just what's designed.
 
 ## Core terminology
 
