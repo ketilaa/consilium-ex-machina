@@ -80,16 +80,15 @@ def dissenter_system(role, objection):
     )
 
 
-def dissenter_react_system(role, objection):
+def challenger_react_system(role):
     return (
         f"{MANDATES[role]}\n\n"
-        "You previously raised the following non-negotiable objection:\n"
-        f"{objection}\n\n"
-        "You have been shown a revised proposal. Judge only whether it concretely "
-        "eliminates the specific failure scenario you described, or whether it is a "
-        "generic reassurance that leaves the scenario possible. Answer with a first "
-        "line of exactly 'CONCERN RESOLVED' or 'CONCERN NOT RESOLVED', followed by a "
-        "2-3 sentence justification."
+        "You previously raised a concern about a proposed decision (quoted below). You "
+        "have now been shown a revised proposal. Judge only whether it concretely "
+        "resolves the specific concern you raised — not whether it's a good proposal "
+        "overall, and not concerns raised by anyone else. Answer with a first line of "
+        "exactly 'CONCERN RESOLVED' or 'CONCERN NOT RESOLVED', followed by a 2-3 "
+        "sentence justification referencing your original concern specifically."
     )
 
 

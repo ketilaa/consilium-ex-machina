@@ -224,6 +224,37 @@ adversarial role": the specific step that decides whether a revision actually sa
 objection needs to ask the party that holds the objection, not a generalist reprocessing everything
 from the top.
 
+## Fix: ask the objecting role, not the generalist
+
+The implied fix above was implemented and re-run: the post-revision re-check no longer routes
+through the generalist refuter re-scanning every issue from scratch. Instead, each role that raised
+a concern (the dissenter, and any other challenger) is shown its own original concern plus the
+revision and asked, directly, whether *its own* concern is resolved — the same question that already
+worked correctly for the dissenter in the previous run, now applied uniformly
+(`challenger_react_system` in `roles.py`; convergence requires every role to answer `CONCERN
+RESOLVED`). The old generalist refuter re-check is still run and recorded on every transcript, but
+only for side-by-side comparison — it no longer decides the outcome.
+
+Result, all three decisions:
+
+| Decision | Fixed mechanism (per-role reaction) | Old refuter re-check | Confidence |
+|---|---|---|---|
+| Event coordination | converged — both roles confirm resolved | still says REFUTED / blocking | 0.9 |
+| Work-item persistence | converged — both roles confirm resolved | still says REFUTED / blocking | 0.9 |
+| API authentication | converged — both roles confirm resolved (including the second, non-dissenter blocking item) | still says REFUTED / blocking | 0.9 |
+
+All three now converge correctly, matching what an objective read of the transcripts already
+suggested: each revision genuinely fixed the stated failure scenario. The old refuter mechanism, run
+in parallel purely for comparison, disagreed in all three cases — reproducing the anchoring behavior
+exactly, which confirms the diagnosis rather than the fix having accidentally "solved" a problem that
+wasn't there. Full transcripts: `proof-of-concept/decision-making/runs/<slug>/dissent_fixed.md`
+(the earlier, anchoring-mechanism transcripts remain at `dissent.md` for comparison — nothing was
+overwritten).
+
+This closes the loop opened by finding 1 in the original PoC: a real, structural weakness was found
+(the re-check step), a specific fix was proposed from the evidence rather than guessed at, and the
+fix was verified to change the outcome on the same test cases — not just asserted to.
+
 ## Candidate write-ups
 
 Flagging these because they're concrete, evidence-backed, and more interesting than "we tried
@@ -231,7 +262,8 @@ multi-agent AI and it sort of worked":
 
 - **"We built the textbook anti-rubber-stamp mechanism, and it rubber-stamped anyway."** A
   contrarian, data-backed piece on why an adversarial-agent role doesn't behave adversarially by
-  default — and what it actually took (if the follow-up PoC finds something) to make it bite.
+  default, what it actually took to make it bite (a concrete, failure-scenario-grounded objection),
+  and the second bug that surfaced right behind it once the first one was fixed.
 - **"Derived confidence isn't automatically better than self-reported confidence."** The formula
   removed self-report but is still gameable by discussion volume — a caution for anyone building
   agent confidence scoring who assumes "computed, not asserted" is sufficient by itself.

@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "event-coordination",
+    "state": "converged",
+    "rounds": 1,
+    "confidence": 0.9,
+    "refuter_reaction_agree": false,
+    "seconds": 232.4
+  },
+  {
+    "slug": "work-item-persistence",
+    "state": "converged",
+    "rounds": 1,
+    "confidence": 0.9,
+    "refuter_reaction_agree": false,
+    "seconds": 239.5
+  },
+  {
+    "slug": "api-authentication",
+    "state": "converged",
+    "rounds": 1,
+    "confidence": 0.9,
+    "refuter_reaction_agree": false,
+    "seconds": 255.3
+  }
+]
