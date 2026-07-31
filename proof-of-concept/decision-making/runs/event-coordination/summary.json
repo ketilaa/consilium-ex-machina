@@ -1,0 +1,8 @@
+{
+  "slug": "event-coordination",
+  "state": "converged",
+  "rounds": 0,
+  "confidence": 0.95,
+  "baseline_seconds": 43.3,
+  "lifecycle_seconds": 106.7
+}
