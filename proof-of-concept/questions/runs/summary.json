@@ -1,0 +1,179 @@
+{
+  "ambiguous": [
+    {
+      "slug": "cancel-order-endpoint",
+      "silent_verdict": "unparsed",
+      "generalist_verdict": "proceeded",
+      "generalist_question_count": 0,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    },
+    {
+      "slug": "expense-reimbursement-multi-currency",
+      "silent_verdict": "unparsed",
+      "generalist_verdict": "asked",
+      "generalist_question_count": 4,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    },
+    {
+      "slug": "notification-opt-out",
+      "silent_verdict": "unparsed",
+      "generalist_verdict": "proceeded",
+      "generalist_question_count": 0,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    },
+    {
+      "slug": "bulk-employee-import-duplicates",
+      "silent_verdict": "unparsed",
+      "generalist_verdict": "asked",
+      "generalist_question_count": 4,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    },
+    {
+      "slug": "session-timeout-reduction",
+      "silent_verdict": "unparsed",
+      "generalist_verdict": "asked",
+      "generalist_question_count": 3,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    }
+  ],
+  "unambiguous": [
+    {
+      "slug": "health-check-endpoint",
+      "generalist_verdict": "proceeded",
+      "generalist_question_count": 0,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    },
+    {
+      "slug": "rename-api-field",
+      "generalist_verdict": "proceeded",
+      "generalist_question_count": 0,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    },
+    {
+      "slug": "add-db-index",
+      "generalist_verdict": "proceeded",
+      "generalist_question_count": 0,
+      "panel_verdicts": {
+        "Architect": "proceeded",
+        "Backend Developer": "proceeded",
+        "Security Reviewer": "proceeded",
+        "Release Manager": "proceeded",
+        "Performance Reviewer": "proceeded",
+        "Domain Expert": "proceeded"
+      },
+      "panel_question_counts": {
+        "Architect": 0,
+        "Backend Developer": 0,
+        "Security Reviewer": 0,
+        "Release Manager": 0,
+        "Performance Reviewer": 0,
+        "Domain Expert": 0
+      }
+    }
+  ]
+}
