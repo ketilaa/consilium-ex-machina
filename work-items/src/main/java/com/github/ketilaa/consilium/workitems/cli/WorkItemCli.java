@@ -34,21 +34,31 @@ public final class WorkItemCli {
             return;
         }
 
-        Path storeDir = Path.of(System.getenv().getOrDefault("WORK_ITEM_STORE_DIR", ".work-items"));
+        Path storeDir = Path.of(System.getenv().getOrDefault("WORK_ITEM_STORE_DIR", "platform-dogfooding/work-items"));
         WorkItemRepository repository = new FileWorkItemRepository(storeDir);
 
-        Path decisionsStoreDir = Path.of(System.getenv().getOrDefault("DECISION_ENGINE_STORE_DIR", ".decisions"));
+        Path decisionsStoreDir = Path.of(
+                System.getenv().getOrDefault("DECISION_ENGINE_STORE_DIR", "platform-dogfooding/decisions")
+        );
         DecisionRepository decisionRepository = new FileDecisionRepository(decisionsStoreDir);
         WorkItemDecisionsView view = new WorkItemDecisionsView(decisionRepository);
 
         switch (args[0]) {
             case "create" -> {
                 if (args.length < 3) {
-                    System.err.println("Usage: create <kind> <title>");
+                    System.err.println("Usage: create <kind> <title> [--parent <work-item-id>]");
                     System.exit(1);
                     return;
                 }
-                create(repository, args[1], args[2]);
+                create(repository, args[1], args[2], parseParentFlag(args));
+            }
+            case "reparent" -> {
+                if (args.length < 3) {
+                    System.err.println("Usage: reparent <work-item-id> <new-parent-id>");
+                    System.exit(1);
+                    return;
+                }
+                reparent(repository, args[1], args[2]);
             }
             case "show" -> {
                 if (args.length < 2) {
@@ -62,7 +72,17 @@ public final class WorkItemCli {
         }
     }
 
-    private static void create(WorkItemRepository repository, String kindArg, String title) {
+    /** {@code --parent <work-item-id>} nests the new item under an existing one; unset means top-level (e.g. an Initiative). */
+    private static WorkItemId parseParentFlag(String[] args) {
+        for (int i = 1; i < args.length - 1; i++) {
+            if (args[i].equals("--parent")) {
+                return new WorkItemId(args[i + 1]);
+            }
+        }
+        return null;
+    }
+
+    private static void create(WorkItemRepository repository, String kindArg, String title, WorkItemId parentId) {
         WorkItemKind kind;
         try {
             kind = WorkItemKind.valueOf(kindArg.toUpperCase(Locale.ROOT));
@@ -75,12 +95,26 @@ public final class WorkItemCli {
         String id = kindPrefix(kind) + "-" + UUID.randomUUID().toString().substring(0, 8);
         WorkItemId workItemId = new WorkItemId(id);
         WorkItem workItem = new WorkItem(workItemId);
-        workItem.apply(new WorkItemEvent.Created(kind, title, title, null, new Owner("human:cli")));
+        workItem.apply(new WorkItemEvent.Created(kind, title, title, parentId, new Owner("human:cli")));
         repository.save(workItem);
 
-        System.out.println("Created " + kind + " " + id + ": " + title);
+        System.out.println("Created " + kind + " " + id + ": " + title + (parentId == null ? "" : " (under " + parentId + ")"));
         System.out.println("To attach a real decision to it:");
         System.out.println("  DecisionEngineCli run --origin " + WorkItemDecisionsView.originReferenceFor(workItemId));
+    }
+
+    private static void reparent(WorkItemRepository repository, String idValue, String newParentValue) {
+        WorkItemId id = new WorkItemId(idValue);
+        Optional<WorkItem> found = repository.findById(id);
+        if (found.isEmpty()) {
+            System.err.println("No work item found with id " + idValue);
+            System.exit(1);
+            return;
+        }
+        WorkItem workItem = found.get();
+        workItem.apply(new WorkItemEvent.Reparented(new WorkItemId(newParentValue)));
+        repository.save(workItem);
+        System.out.println(id + " reparented under " + newParentValue);
     }
 
     private static void show(WorkItemRepository repository, WorkItemDecisionsView view, String idValue) {
@@ -124,7 +158,10 @@ public final class WorkItemCli {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: WorkItemCli create <kind> <title>   (kind: " + List.of(WorkItemKind.values()) + ")");
+        System.out.println(
+                "Usage: WorkItemCli create <kind> <title> [--parent <id>]   (kind: " + List.of(WorkItemKind.values()) + ")"
+        );
+        System.out.println("       WorkItemCli reparent <work-item-id> <new-parent-id>");
         System.out.println("       WorkItemCli show <work-item-id>");
     }
 }

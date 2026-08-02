@@ -1,0 +1,2 @@
+{"type":"Header","id":"feat-e3ce7364"}
+{"type":"Created","kind":"FEATURE","title":"Make the agent role registry configurable instead of hardcoded","description":"Make the agent role registry configurable instead of hardcoded","parentId":"init-86ba9e56","owner":"human:cli"}

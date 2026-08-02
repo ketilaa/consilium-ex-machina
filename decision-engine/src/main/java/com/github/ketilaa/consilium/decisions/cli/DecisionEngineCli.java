@@ -33,7 +33,9 @@ public final class DecisionEngineCli {
             return;
         }
 
-        Path storeDir = Path.of(System.getenv().getOrDefault("DECISION_ENGINE_STORE_DIR", ".decisions"));
+        Path storeDir = Path.of(
+                System.getenv().getOrDefault("DECISION_ENGINE_STORE_DIR", "platform-dogfooding/decisions")
+        );
         DecisionRepository repository = new FileDecisionRepository(storeDir);
 
         switch (args[0]) {
