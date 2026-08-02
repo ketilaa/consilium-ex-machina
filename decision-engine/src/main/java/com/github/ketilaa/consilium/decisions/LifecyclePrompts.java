@@ -57,10 +57,15 @@ final class LifecyclePrompts {
                 + MISSING_FACT_LABEL + ":', followed by the concern itself.";
     }
 
+    // Spelled with a hyphen throughout, matching the literal tag format the model is asked to
+    // use below -- this text originally spelled the middle one "NON_BLOCKING" (matching the
+    // Java enum name instead of the tag format), and on the first live decision run through
+    // this engine, the model echoed that underscore spelling into its actual [NON_BLOCKING]
+    // tag, breaking the parser. Keep this and the tagging instruction in sync.
     static final String CLASSIFY_DEFINITIONS =
             "BLOCKING -- a genuine problem with the proposal that its owner could actually "
                     + "address by revising the approach through better engineering judgment.\n"
-                    + "NON_BLOCKING -- a valid but non-critical point.\n"
+                    + "NON-BLOCKING -- a valid but non-critical point.\n"
                     + "QUESTION -- a genuine gap in the FACTS available, not resolvable by any "
                     + "amount of engineering reasoning or revision, because it depends on "
                     + "information (a business decision, a legal/compliance requirement, a "

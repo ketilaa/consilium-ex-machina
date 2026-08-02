@@ -57,6 +57,11 @@ public final class Roles {
 
     private static final Map<String, Role> BY_NAME = ALL.stream().collect(Collectors.toMap(Role::name, Function.identity()));
 
+    /** Every shared role constant this registry currently knows about -- e.g. for listing valid choices in a CLI usage message. */
+    public static List<Role> all() {
+        return ALL;
+    }
+
     /**
      * Resolves a role by name against this known set. v1's persistence format stores only the
      * role name (not the mandate text), so only these shared constants can round-trip through

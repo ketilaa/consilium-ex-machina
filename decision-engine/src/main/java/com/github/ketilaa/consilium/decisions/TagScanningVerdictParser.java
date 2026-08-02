@@ -20,10 +20,18 @@ import java.util.regex.Pattern;
  * presented, exactly as proof-of-concept/structured-output's grading heuristic did. If the
  * model discusses items out of order, this parser can misattribute -- a real, structural
  * limitation of free text, not a bug to paper over.
+ *
+ * <p>Matches {@code NON-BLOCKING} or {@code NON_BLOCKING} -- caught live on the first real
+ * decision run through this engine: {@code LifecyclePrompts}' own definitions text spelled it
+ * {@code NON_BLOCKING} (matching the Java enum name) while the tagging instruction asked for
+ * {@code [NON-BLOCKING]} (hyphen), and the model echoed the underscore form it had just read in
+ * its own prompt. Both the prompt and this regex were fixed; kept tolerant of either here too,
+ * since a hyphen/underscore mismatch is exactly the class of formatting variance this parser
+ * exists to survive, prompt-side bug or not.
  */
 final class TagScanningVerdictParser implements VerdictParser {
 
-    private static final Pattern TAG = Pattern.compile("\\[(BLOCKING|NON-BLOCKING|QUESTION)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TAG = Pattern.compile("\\[(BLOCKING|NON[-_]BLOCKING|QUESTION)\\b", Pattern.CASE_INSENSITIVE);
 
     @Override
     public Map<ItemId, Verdict> parse(String modelResponse, List<ItemId> itemIdsInPresentedOrder) {

@@ -163,7 +163,8 @@ public final class DecisionLifecycleService {
     }
 
     private static String decisionBrief(Decision decision) {
-        return "Decision: " + decision.title() + "\n\nCategory: " + decision.category();
+        return "Decision: " + decision.title() + "\n\nCategory: " + decision.category()
+                + "\n\nContext: " + decision.context();
     }
 
     private static String itemsText(Map<ItemId, String> items) {

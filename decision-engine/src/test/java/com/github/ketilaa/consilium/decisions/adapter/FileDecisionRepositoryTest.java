@@ -46,7 +46,7 @@ class FileDecisionRepositoryTest {
     @Test
     void roundTripsAFullDecisionIncludingStatusAndItemOrder() {
         Decision decision = new Decision(
-                "d-1", "How long should we retain the audit log?",
+                "d-1", "How long should we retain the audit log?", "Test context",
                 "Compliance / data retention", OWNER, new OriginReference("test:origin")
         );
         decision.apply(new DecisionEvent.Proposed("retain for 7 years"));
@@ -98,9 +98,11 @@ class FileDecisionRepositoryTest {
     @Test
     void findByOriginReturnsOnlyDecisionsWithThatExactOrigin() {
         OriginReference target = new OriginReference("work-item:feat-1");
-        Decision matching = new Decision("d-a", "Decision A", "Category", OWNER, target);
+        Decision matching = new Decision("d-a", "Decision A", "Context A", "Category", OWNER, target);
         matching.apply(new DecisionEvent.Proposed("proposal A"));
-        Decision otherOrigin = new Decision("d-b", "Decision B", "Category", OWNER, new OriginReference("work-item:feat-2"));
+        Decision otherOrigin = new Decision(
+                "d-b", "Decision B", "Context B", "Category", OWNER, new OriginReference("work-item:feat-2")
+        );
         otherOrigin.apply(new DecisionEvent.Proposed("proposal B"));
 
         FileDecisionRepository repository = new FileDecisionRepository(tempDir);

@@ -19,7 +19,7 @@ public final class InMemoryDecisionRepository implements DecisionRepository {
     @Override
     public void save(Decision decision) {
         snapshots.put(decision.id(), Decision.reconstruct(
-                decision.id(), decision.title(), decision.category(), decision.ownerRole(),
+                decision.id(), decision.title(), decision.context(), decision.category(), decision.ownerRole(),
                 decision.origin(), decision.events()
         ));
     }

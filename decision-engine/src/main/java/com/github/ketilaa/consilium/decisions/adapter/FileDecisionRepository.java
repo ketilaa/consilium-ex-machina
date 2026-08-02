@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * Persists each Decision as a JSON-lines file: one header line (id/title/category/owner/origin),
+ * Persists each Decision as a JSON-lines file: one header line (id/title/context/category/owner/origin),
  * then one line per event, in order -- a real, readable audit trail on disk. Overwritten in
  * full on every save(); {@link Decision#events()} always returns the complete history, so
  * there's no need for incremental appends in v1.
@@ -44,6 +44,7 @@ public final class FileDecisionRepository implements DecisionRepository {
         header.put("type", "Header");
         header.put("id", decision.id());
         header.put("title", decision.title());
+        header.put("context", decision.context());
         header.put("category", decision.category());
         header.put("ownerRole", decision.ownerRole().name());
         header.put("origin", decision.origin().value());
@@ -104,6 +105,7 @@ public final class FileDecisionRepository implements DecisionRepository {
             return Decision.reconstruct(
                     header.get("id").asText(),
                     header.get("title").asText(),
+                    header.get("context").asText(),
                     header.get("category").asText(),
                     Roles.byName(header.get("ownerRole").asText()),
                     new OriginReference(header.get("origin").asText()),

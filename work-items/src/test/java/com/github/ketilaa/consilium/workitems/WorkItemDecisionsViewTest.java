@@ -26,11 +26,13 @@ class WorkItemDecisionsViewTest {
         WorkItemId workItemId = new WorkItemId("feat-1");
         OriginReference thisWorkItem = WorkItemDecisionsView.originReferenceFor(workItemId);
 
-        Decision related = new Decision("d-1", "Retention period", "Compliance", Roles.RELEASE_MANAGER, thisWorkItem);
+        Decision related = new Decision(
+                "d-1", "Retention period", "Context", "Compliance", Roles.RELEASE_MANAGER, thisWorkItem
+        );
         related.apply(new DecisionEvent.Proposed("retain for 7 years"));
 
         Decision unrelated = new Decision(
-                "d-2", "Unrelated decision", "Compliance", Roles.RELEASE_MANAGER,
+                "d-2", "Unrelated decision", "Context", "Compliance", Roles.RELEASE_MANAGER,
                 new OriginReference("work-item:feat-2")
         );
         unrelated.apply(new DecisionEvent.Proposed("something else"));
@@ -49,7 +51,9 @@ class WorkItemDecisionsViewTest {
         WorkItemId workItemId = new WorkItemId("feat-1");
         OriginReference thisWorkItem = WorkItemDecisionsView.originReferenceFor(workItemId);
 
-        Decision decision = new Decision("d-1", "Retention period", "Compliance", Roles.RELEASE_MANAGER, thisWorkItem);
+        Decision decision = new Decision(
+                "d-1", "Retention period", "Context", "Compliance", Roles.RELEASE_MANAGER, thisWorkItem
+        );
         decision.apply(new DecisionEvent.Proposed("retain for 7 years"));
         decision.apply(new DecisionEvent.Contested(Map.of(QUESTION_ITEM, "what's the real minimum?")));
         decision.apply(new DecisionEvent.Classified(Map.of(QUESTION_ITEM, Verdict.QUESTION)));

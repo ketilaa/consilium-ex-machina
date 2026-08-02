@@ -25,6 +25,7 @@ class DecisionLifecycleServiceTest {
         return new Decision(
                 "d-test",
                 "How long should the platform retain its audit log?",
+                "Test context: the audit log is the durable record of engineering choices.",
                 "Compliance / data retention",
                 OWNER,
                 new OriginReference("test:audit-log-retention")
