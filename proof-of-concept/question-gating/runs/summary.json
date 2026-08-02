@@ -1,0 +1,21 @@
+[
+  {
+    "slug": "audit-log-retention",
+    "baseline_state": "escalated_to_human",
+    "gated_state": "converged",
+    "gated_state_note": "corrected after fixing an _is_resolved parser bug (see runs/audit-log-retention.md); the original run mis-parsed a markdown-bold '**RESOLVED.**' response as not-resolved and falsely reported 'escalated_to_human'",
+    "gated_has_question_round_1": true,
+    "gated_blocked_after_self_answer_attempt": "blocked_on_question",
+    "question_raiser_fooled_by_self_answer": false,
+    "old_mechanism_still_flags_question_after_external_answer": true
+  },
+  {
+    "slug": "llm-inference-hosting",
+    "baseline_state": "escalated_to_human",
+    "gated_state": "converged",
+    "gated_has_question_round_1": true,
+    "gated_blocked_after_self_answer_attempt": "blocked_on_question",
+    "question_raiser_fooled_by_self_answer": false,
+    "old_mechanism_still_flags_question_after_external_answer": true
+  }
+]

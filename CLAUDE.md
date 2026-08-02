@@ -25,9 +25,34 @@ written, rather than argued from first principles alone. Findings are written up
   construction vs. full-repo dump vs. no context. Validated decisively: full-dump silently
   truncates on smaller-context models while the packet doesn't, at meaningfully lower token cost
   even on models that can fit the full dump.
+- [poc-questions.md](docs/learning/poc-questions.md) — whether role-framed reviewers surface more
+  genuine ambiguity than one generalist agent (the "Questions are first-class citizens" pillar).
+  Mixed but real: same model, only the framing changed, went from 0/3 to 3/3 ambiguities caught on
+  the one task retested both ways — but that gain needed a capability floor the panel didn't clear
+  on a weaker model, and no framing or model tier caught the one ambiguity the request's own wording
+  gave no lexical hint toward.
+- [poc-question-gating.md](docs/learning/poc-question-gating.md) — whether a raised Question actually
+  blocks a dependent Decision, the mechanism half poc-questions.md left untested. Validated across two
+  runs. First run: a structural, code-enforced gate held in both trials regardless of whether the
+  owner deferred to an external source or fabricated a placeholder answer, but the
+  "re-check anchors on stale verdict" bug from poc-decision-making.md reappeared and blocked a clean
+  convergence in both trials. Second run: fixed the anchoring bug by generalizing
+  poc-decision-making.md's per-role targeted recheck (ask the specific raiser whether *its own* item
+  is resolved, instead of a generalist reclassifying everything from scratch) — both trials now
+  converge cleanly, demonstrated head-to-head against the unfixed mechanism in the same transcripts.
+  Also surfaced a second, ironic tag-parsing bug in the fix's own code (markdown formatting broke a
+  strict prefix match, the same class of bug the first run's Finding 5 had just named) — fixed, and a
+  reminder that naming a bug class doesn't make new code immune to it.
 
-Next candidate, not yet started: whether agents reliably raise genuine clarifying Questions instead
-of guessing under ambiguity (the "Questions are first-class citizens" pillar).
+Next candidate, not yet started: replace free-text tag scanning with forced structured output (a
+JSON-schema or tool-call response, not a regex over prose) for these classification/recheck steps.
+Every PoC so far that includes a classifier — poc-decision-making.md's refuter, poc-questions.md's
+QUESTION/PROCEEDING protocol, and poc-question-gating.md's BLOCKING/QUESTION/RESOLVED tags — has hit
+at least one instance of a model's free-text formatting breaking a hand-written parser (a colon inside
+a bracket, markdown bold around a verdict). Two independent bugs of exactly this shape were found and
+fixed in poc-question-gating.md alone. Test whether forcing the model to call a schema-defined tool
+instead of emitting a tagged string eliminates this whole class of bug, rather than fixing parsers one
+format variant at a time.
 
 Before proposing platform code structure, read the architecture doc and the PoC findings above; the
 domain model should stay grounded in what's actually been tested, not just what's designed.
