@@ -1,6 +1,7 @@
 package com.github.ketilaa.consilium.decisions.adapter;
 
 import com.github.ketilaa.consilium.decisions.DecisionEvent;
+import com.github.ketilaa.consilium.decisions.ItemId;
 import com.github.ketilaa.consilium.decisions.port.DecisionEventPublisher;
 import java.io.PrintStream;
 
@@ -26,7 +27,7 @@ public final class LoggingEventPublisher implements DecisionEventPublisher {
         if (event instanceof DecisionEvent.Proposed) {
             return "proposed";
         } else if (event instanceof DecisionEvent.Contested e) {
-            return "contested: " + e.items().size() + " item(s) raised (" + roleNames(e.items().keySet()) + ")";
+            return "contested: " + e.items().size() + " item(s) raised (" + itemIds(e.items().keySet()) + ")";
         } else if (event instanceof DecisionEvent.Classified e) {
             return "classified: " + e.verdicts();
         } else if (event instanceof DecisionEvent.Revised) {
@@ -34,18 +35,18 @@ public final class LoggingEventPublisher implements DecisionEventPublisher {
         } else if (event instanceof DecisionEvent.Rechecked e) {
             return "rechecked: " + e.verdicts();
         } else if (event instanceof DecisionEvent.QuestionAnsweredExternally e) {
-            return "question answered externally by " + e.role() + " (source: " + e.source() + ")";
+            return "question answered externally for " + e.itemId() + " (source: " + e.source() + ")";
         }
         return event.toString();
     }
 
-    private static String roleNames(Iterable<com.github.ketilaa.consilium.decisions.Role> roles) {
+    private static String itemIds(Iterable<ItemId> ids) {
         StringBuilder sb = new StringBuilder();
-        for (var role : roles) {
+        for (var id : ids) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             }
-            sb.append(role);
+            sb.append(id);
         }
         return sb.toString();
     }

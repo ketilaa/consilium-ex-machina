@@ -13,18 +13,18 @@ import java.util.Map;
  */
 public record DecisionState(
         DecisionStatus status,
-        Map<Role, String> raisedItems,
-        Map<Role, Verdict> verdicts,
-        Map<Role, RecheckVerdict> rechecks,
-        Map<Role, String> externalAnswers,
+        Map<ItemId, String> raisedItems,
+        Map<ItemId, Verdict> verdicts,
+        Map<ItemId, RecheckVerdict> rechecks,
+        Map<ItemId, String> externalAnswers,
         int revisionRounds
 ) {
 
     public static DecisionState fold(List<DecisionEvent> events) {
-        Map<Role, String> items = null;
-        Map<Role, Verdict> verdicts = null;
-        Map<Role, RecheckVerdict> rechecks = new LinkedHashMap<>();
-        Map<Role, String> externalAnswers = new LinkedHashMap<>();
+        Map<ItemId, String> items = null;
+        Map<ItemId, Verdict> verdicts = null;
+        Map<ItemId, RecheckVerdict> rechecks = new LinkedHashMap<>();
+        Map<ItemId, String> externalAnswers = new LinkedHashMap<>();
         int revisionRounds = 0;
 
         for (DecisionEvent event : events) {
@@ -37,12 +37,12 @@ public record DecisionState(
             } else if (event instanceof DecisionEvent.Rechecked rechecked) {
                 rechecks = new LinkedHashMap<>(rechecked.verdicts());
             } else if (event instanceof DecisionEvent.QuestionAnsweredExternally answered) {
-                externalAnswers.put(answered.role(), answered.answerText());
+                externalAnswers.put(answered.itemId(), answered.answerText());
                 // A recheck computed before this answer arrived judged the raiser's own
                 // question, not this answer -- it can't count as confirming resolution
                 // of an answer it never saw. Clear it until a fresh Rechecked event
                 // (which the service always issues right after answering) supersedes it.
-                rechecks.remove(answered.role());
+                rechecks.remove(answered.itemId());
             }
         }
 
@@ -52,7 +52,7 @@ public record DecisionState(
                 items == null ? Map.of() : items,
                 verdicts == null ? Map.of() : verdicts,
                 // Collections.unmodifiableMap, not Map.copyOf -- Map.copyOf does not
-                // preserve insertion order, which silently broke positional role
+                // preserve insertion order, which silently broke positional item
                 // attribution in TagScanningVerdictParser once already.
                 Collections.unmodifiableMap(rechecks),
                 Collections.unmodifiableMap(externalAnswers),
@@ -61,10 +61,10 @@ public record DecisionState(
     }
 
     private static DecisionStatus deriveStatus(
-            Map<Role, String> items,
-            Map<Role, Verdict> verdicts,
-            Map<Role, RecheckVerdict> rechecks,
-            Map<Role, String> externalAnswers,
+            Map<ItemId, String> items,
+            Map<ItemId, Verdict> verdicts,
+            Map<ItemId, RecheckVerdict> rechecks,
+            Map<ItemId, String> externalAnswers,
             int revisionRounds
     ) {
         if (items == null) {
@@ -74,8 +74,8 @@ public record DecisionState(
             return DecisionStatus.CONTESTED;
         }
 
-        List<Role> blocking = rolesWithVerdict(verdicts, Verdict.BLOCKING);
-        List<Role> questions = rolesWithVerdict(verdicts, Verdict.QUESTION);
+        List<ItemId> blocking = itemsWithVerdict(verdicts, Verdict.BLOCKING);
+        List<ItemId> questions = itemsWithVerdict(verdicts, Verdict.QUESTION);
 
         if (blocking.isEmpty() && questions.isEmpty()) {
             return DecisionStatus.CONVERGED;
@@ -84,28 +84,28 @@ public record DecisionState(
             return DecisionStatus.CONTESTED;
         }
 
-        boolean anyQuestionUnanswered = questions.stream().anyMatch(role -> !externalAnswers.containsKey(role));
+        boolean anyQuestionUnanswered = questions.stream().anyMatch(id -> !externalAnswers.containsKey(id));
         if (anyQuestionUnanswered) {
             return DecisionStatus.BLOCKED_ON_QUESTION;
         }
 
         boolean allResolved = concat(blocking, questions).stream()
-                .allMatch(role -> rechecks.get(role) == RecheckVerdict.RESOLVED);
+                .allMatch(id -> rechecks.get(id) == RecheckVerdict.RESOLVED);
         return allResolved ? DecisionStatus.CONVERGED : DecisionStatus.ESCALATED_TO_HUMAN;
     }
 
-    private static List<Role> rolesWithVerdict(Map<Role, Verdict> verdicts, Verdict target) {
-        List<Role> roles = new ArrayList<>();
-        for (Map.Entry<Role, Verdict> entry : verdicts.entrySet()) {
+    private static List<ItemId> itemsWithVerdict(Map<ItemId, Verdict> verdicts, Verdict target) {
+        List<ItemId> ids = new ArrayList<>();
+        for (Map.Entry<ItemId, Verdict> entry : verdicts.entrySet()) {
             if (entry.getValue() == target) {
-                roles.add(entry.getKey());
+                ids.add(entry.getKey());
             }
         }
-        return roles;
+        return ids;
     }
 
-    private static List<Role> concat(List<Role> a, List<Role> b) {
-        List<Role> all = new ArrayList<>(a);
+    private static List<ItemId> concat(List<ItemId> a, List<ItemId> b) {
+        List<ItemId> all = new ArrayList<>(a);
         all.addAll(b);
         return all;
     }
@@ -113,11 +113,11 @@ public record DecisionState(
     /** Every item classified {@link Verdict#QUESTION}, with its current answer status. */
     public List<Question> questions() {
         List<Question> result = new ArrayList<>();
-        for (Map.Entry<Role, Verdict> entry : verdicts.entrySet()) {
+        for (Map.Entry<ItemId, Verdict> entry : verdicts.entrySet()) {
             if (entry.getValue() == Verdict.QUESTION) {
-                Role role = entry.getKey();
-                String answer = externalAnswers.get(role);
-                result.add(new Question(role, raisedItems.get(role), answer != null, answer));
+                ItemId id = entry.getKey();
+                String answer = externalAnswers.get(id);
+                result.add(new Question(id, raisedItems.get(id), answer != null, answer));
             }
         }
         return result;

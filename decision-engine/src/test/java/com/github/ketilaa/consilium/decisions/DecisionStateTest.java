@@ -16,6 +16,8 @@ class DecisionStateTest {
     private static final Role OWNER = Roles.RELEASE_MANAGER;
     private static final Role ISSUE_ROLE = Roles.BACKEND_DEVELOPER;
     private static final Role QUESTION_ROLE = Roles.SECURITY_REVIEWER;
+    private static final ItemId ISSUE_ITEM = new ItemId(ISSUE_ROLE, 0);
+    private static final ItemId QUESTION_ITEM = new ItemId(QUESTION_ROLE, 0);
 
     @Test
     void proposedWithNoContestIsProposed() {
@@ -52,7 +54,7 @@ class DecisionStateTest {
     void contestedButNotYetClassifiedIsContested() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(ISSUE_ROLE, "no archiving strategy"))
+                new DecisionEvent.Contested(Map.of(ISSUE_ITEM, "no archiving strategy"))
         ));
 
         assertThat(state.status()).isEqualTo(DecisionStatus.CONTESTED);
@@ -62,8 +64,8 @@ class DecisionStateTest {
     void classifiedWithOnlyNonBlockingItemsConverges() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(ISSUE_ROLE, "minor style nit")),
-                new DecisionEvent.Classified(Map.of(ISSUE_ROLE, Verdict.NON_BLOCKING))
+                new DecisionEvent.Contested(Map.of(ISSUE_ITEM, "minor style nit")),
+                new DecisionEvent.Classified(Map.of(ISSUE_ITEM, Verdict.NON_BLOCKING))
         ));
 
         assertThat(state.status()).isEqualTo(DecisionStatus.CONVERGED);
@@ -73,8 +75,8 @@ class DecisionStateTest {
     void classifiedBlockingButNotYetRevisedStaysContested() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(ISSUE_ROLE, "no archiving strategy")),
-                new DecisionEvent.Classified(Map.of(ISSUE_ROLE, Verdict.BLOCKING))
+                new DecisionEvent.Contested(Map.of(ISSUE_ITEM, "no archiving strategy")),
+                new DecisionEvent.Classified(Map.of(ISSUE_ITEM, Verdict.BLOCKING))
         ));
 
         assertThat(state.status()).isEqualTo(DecisionStatus.CONTESTED);
@@ -84,10 +86,10 @@ class DecisionStateTest {
     void revisedAndResolvedIssueConverges() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(ISSUE_ROLE, "no archiving strategy")),
-                new DecisionEvent.Classified(Map.of(ISSUE_ROLE, Verdict.BLOCKING)),
+                new DecisionEvent.Contested(Map.of(ISSUE_ITEM, "no archiving strategy")),
+                new DecisionEvent.Classified(Map.of(ISSUE_ITEM, Verdict.BLOCKING)),
                 new DecisionEvent.Revised("added a one-year archiving policy"),
-                new DecisionEvent.Rechecked(Map.of(ISSUE_ROLE, RecheckVerdict.RESOLVED))
+                new DecisionEvent.Rechecked(Map.of(ISSUE_ITEM, RecheckVerdict.RESOLVED))
         ));
 
         assertThat(state.status()).isEqualTo(DecisionStatus.CONVERGED);
@@ -97,10 +99,10 @@ class DecisionStateTest {
     void revisedButStillUnresolvedIssueEscalates() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(ISSUE_ROLE, "no archiving strategy")),
-                new DecisionEvent.Classified(Map.of(ISSUE_ROLE, Verdict.BLOCKING)),
+                new DecisionEvent.Contested(Map.of(ISSUE_ITEM, "no archiving strategy")),
+                new DecisionEvent.Classified(Map.of(ISSUE_ITEM, Verdict.BLOCKING)),
                 new DecisionEvent.Revised("restated the original proposal"),
-                new DecisionEvent.Rechecked(Map.of(ISSUE_ROLE, RecheckVerdict.NOT_RESOLVED))
+                new DecisionEvent.Rechecked(Map.of(ISSUE_ITEM, RecheckVerdict.NOT_RESOLVED))
         ));
 
         assertThat(state.status()).isEqualTo(DecisionStatus.ESCALATED_TO_HUMAN);
@@ -110,12 +112,12 @@ class DecisionStateTest {
     void openQuestionBlocksRegardlessOfRevisionOrRecheck() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(QUESTION_ROLE, "what's the real minimum?")),
-                new DecisionEvent.Classified(Map.of(QUESTION_ROLE, Verdict.QUESTION)),
+                new DecisionEvent.Contested(Map.of(QUESTION_ITEM, "what's the real minimum?")),
+                new DecisionEvent.Classified(Map.of(QUESTION_ITEM, Verdict.QUESTION)),
                 new DecisionEvent.Revised("self-answer attempt: assuming 7 years for now"),
                 // Even if a recheck somehow said RESOLVED, an open Question must still block --
                 // this is the exact invariant proof-of-concept/question-gating validated.
-                new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.RESOLVED))
+                new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.RESOLVED))
         ));
 
         assertThat(state.status()).isEqualTo(DecisionStatus.BLOCKED_ON_QUESTION);
@@ -126,11 +128,11 @@ class DecisionStateTest {
     void answeringExternallyClearsTheStalePreAnswerRecheck() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(QUESTION_ROLE, "what's the real minimum?")),
-                new DecisionEvent.Classified(Map.of(QUESTION_ROLE, Verdict.QUESTION)),
+                new DecisionEvent.Contested(Map.of(QUESTION_ITEM, "what's the real minimum?")),
+                new DecisionEvent.Classified(Map.of(QUESTION_ITEM, Verdict.QUESTION)),
                 new DecisionEvent.Revised("self-answer attempt: assuming 7 years for now"),
-                new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.NOT_RESOLVED)),
-                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ROLE, "Legal confirmed 3 years", "Legal")
+                new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.NOT_RESOLVED)),
+                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ITEM, "Legal confirmed 3 years", "Legal")
                 // deliberately no fresh Rechecked event yet
         ));
 
@@ -145,23 +147,23 @@ class DecisionStateTest {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
                 new DecisionEvent.Contested(Map.of(
-                        ISSUE_ROLE, "no archiving strategy",
-                        QUESTION_ROLE, "what's the real minimum?"
+                        ISSUE_ITEM, "no archiving strategy",
+                        QUESTION_ITEM, "what's the real minimum?"
                 )),
                 new DecisionEvent.Classified(Map.of(
-                        ISSUE_ROLE, Verdict.BLOCKING,
-                        QUESTION_ROLE, Verdict.QUESTION
+                        ISSUE_ITEM, Verdict.BLOCKING,
+                        QUESTION_ITEM, Verdict.QUESTION
                 )),
                 new DecisionEvent.Revised("self-answer attempt"),
                 new DecisionEvent.Rechecked(Map.of(
-                        ISSUE_ROLE, RecheckVerdict.RESOLVED,
-                        QUESTION_ROLE, RecheckVerdict.NOT_RESOLVED
+                        ISSUE_ITEM, RecheckVerdict.RESOLVED,
+                        QUESTION_ITEM, RecheckVerdict.NOT_RESOLVED
                 )),
-                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ROLE, "Legal confirmed 3 years", "Legal"),
+                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ITEM, "Legal confirmed 3 years", "Legal"),
                 new DecisionEvent.Revised("final revision incorporating the real answer"),
                 new DecisionEvent.Rechecked(Map.of(
-                        ISSUE_ROLE, RecheckVerdict.RESOLVED,
-                        QUESTION_ROLE, RecheckVerdict.RESOLVED
+                        ISSUE_ITEM, RecheckVerdict.RESOLVED,
+                        QUESTION_ITEM, RecheckVerdict.RESOLVED
                 ))
         ));
 
@@ -173,15 +175,41 @@ class DecisionStateTest {
     void answeredButFinalRecheckStillNotResolvedEscalates() {
         DecisionState state = DecisionState.fold(List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(QUESTION_ROLE, "what's the real minimum?")),
-                new DecisionEvent.Classified(Map.of(QUESTION_ROLE, Verdict.QUESTION)),
+                new DecisionEvent.Contested(Map.of(QUESTION_ITEM, "what's the real minimum?")),
+                new DecisionEvent.Classified(Map.of(QUESTION_ITEM, Verdict.QUESTION)),
                 new DecisionEvent.Revised("self-answer attempt"),
-                new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.NOT_RESOLVED)),
-                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ROLE, "Legal confirmed 3 years", "Legal"),
+                new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.NOT_RESOLVED)),
+                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ITEM, "Legal confirmed 3 years", "Legal"),
                 new DecisionEvent.Revised("final revision, but somehow still unconvincing"),
-                new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.NOT_RESOLVED))
+                new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.NOT_RESOLVED))
         ));
 
         assertThat(state.status()).isEqualTo(DecisionStatus.ESCALATED_TO_HUMAN);
+    }
+
+    @Test
+    void aRoleCanRaiseMultipleIndependentItemsAndAnsweringOneDoesNotResolveTheOther() {
+        ItemId firstQuestion = new ItemId(QUESTION_ROLE, 0);
+        ItemId secondQuestion = new ItemId(QUESTION_ROLE, 1);
+        DecisionState state = DecisionState.fold(List.of(
+                new DecisionEvent.Proposed("retain for 7 years"),
+                new DecisionEvent.Contested(Map.of(
+                        firstQuestion, "what's the real minimum retention period?",
+                        secondQuestion, "what's the cost implication of long-term storage?"
+                )),
+                new DecisionEvent.Classified(Map.of(
+                        firstQuestion, Verdict.QUESTION,
+                        secondQuestion, Verdict.QUESTION
+                )),
+                new DecisionEvent.Revised("self-answer attempt"),
+                new DecisionEvent.Rechecked(Map.of(
+                        firstQuestion, RecheckVerdict.NOT_RESOLVED,
+                        secondQuestion, RecheckVerdict.NOT_RESOLVED
+                )),
+                new DecisionEvent.QuestionAnsweredExternally(firstQuestion, "Legal confirmed 3 years", "Legal")
+        ));
+
+        assertThat(state.openQuestions()).extracting(Question::itemId).containsExactly(secondQuestion);
+        assertThat(state.status()).isEqualTo(DecisionStatus.BLOCKED_ON_QUESTION);
     }
 }

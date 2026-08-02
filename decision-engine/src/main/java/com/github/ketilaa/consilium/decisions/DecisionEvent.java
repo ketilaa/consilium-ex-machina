@@ -19,19 +19,20 @@ public sealed interface DecisionEvent {
     }
 
     /**
-     * Every item raised against the proposal in one contest round, keyed by the raising
-     * role, in presentation order -- {@link TagScanningVerdictParser} attributes free-text
-     * tags to roles positionally, so this order must survive intact. {@code Map.copyOf}
-     * does NOT preserve insertion order; that silently broke this once already.
+     * Every distinct concern raised against the proposal in one contest round, keyed by
+     * {@link ItemId}, in presentation order -- {@link TagScanningVerdictParser} attributes
+     * free-text tags to items positionally, so this order must survive intact. A single role
+     * can raise more than one item (see {@link ItemSplitter}); {@code Map.copyOf} does NOT
+     * preserve insertion order, which silently broke this once already.
      */
-    record Contested(Map<Role, String> items) implements DecisionEvent {
+    record Contested(Map<ItemId, String> items) implements DecisionEvent {
         public Contested {
             items = orderPreservingCopy(items);
         }
     }
 
-    /** The classification of every raised item in one round, keyed by the raising role, in the same order. */
-    record Classified(Map<Role, Verdict> verdicts) implements DecisionEvent {
+    /** The classification of every raised item in one round, keyed by {@link ItemId}, in the same order. */
+    record Classified(Map<ItemId, Verdict> verdicts) implements DecisionEvent {
         public Classified {
             verdicts = orderPreservingCopy(verdicts);
         }
@@ -45,11 +46,11 @@ public sealed interface DecisionEvent {
     }
 
     /**
-     * The targeted per-raiser recheck for one round: each role that raised an item judges
+     * The targeted per-raiser recheck for one round: the role that raised each item judges
      * only whether ITS OWN item is resolved by the most recent revision -- never a
      * generalist reclassifying everything from scratch.
      */
-    record Rechecked(Map<Role, RecheckVerdict> verdicts) implements DecisionEvent {
+    record Rechecked(Map<ItemId, RecheckVerdict> verdicts) implements DecisionEvent {
         public Rechecked {
             verdicts = orderPreservingCopy(verdicts);
         }
@@ -62,9 +63,11 @@ public sealed interface DecisionEvent {
      * {@link DecisionLifecycleService#resolveQuestionExternally}, a method entirely separate
      * from the revise/self-answer path, so an owner's own text -- however confident -- can
      * never satisfy this structural gate. Mirrors the {@code question_resolved_externally}
-     * flag validated in proof-of-concept/question-gating.
+     * flag validated in proof-of-concept/question-gating. Keyed by the specific item, not
+     * just the role, so answering one of a role's several missing facts doesn't accidentally
+     * clear the others.
      */
-    record QuestionAnsweredExternally(Role role, String answerText, String source) implements DecisionEvent {
+    record QuestionAnsweredExternally(ItemId itemId, String answerText, String source) implements DecisionEvent {
         public QuestionAnsweredExternally {
             requireNonBlank(answerText, "answerText");
             requireNonBlank(source, "source");

@@ -4,9 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.ketilaa.consilium.decisions.DecisionEvent;
+import com.github.ketilaa.consilium.decisions.ItemId;
 import com.github.ketilaa.consilium.decisions.RecheckVerdict;
-import com.github.ketilaa.consilium.decisions.Role;
-import com.github.ketilaa.consilium.decisions.Roles;
 import com.github.ketilaa.consilium.decisions.Verdict;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,21 +31,21 @@ final class DecisionEventCodec {
         } else if (event instanceof DecisionEvent.Contested e) {
             node.put("type", "Contested");
             ObjectNode items = node.putObject("items");
-            e.items().forEach((role, text) -> items.put(role.name(), text));
+            e.items().forEach((id, text) -> items.put(id.toString(), text));
         } else if (event instanceof DecisionEvent.Classified e) {
             node.put("type", "Classified");
             ObjectNode verdicts = node.putObject("verdicts");
-            e.verdicts().forEach((role, verdict) -> verdicts.put(role.name(), verdict.name()));
+            e.verdicts().forEach((id, verdict) -> verdicts.put(id.toString(), verdict.name()));
         } else if (event instanceof DecisionEvent.Revised e) {
             node.put("type", "Revised");
             node.put("revisionText", e.revisionText());
         } else if (event instanceof DecisionEvent.Rechecked e) {
             node.put("type", "Rechecked");
             ObjectNode verdicts = node.putObject("verdicts");
-            e.verdicts().forEach((role, verdict) -> verdicts.put(role.name(), verdict.name()));
+            e.verdicts().forEach((id, verdict) -> verdicts.put(id.toString(), verdict.name()));
         } else if (event instanceof DecisionEvent.QuestionAnsweredExternally e) {
             node.put("type", "QuestionAnsweredExternally");
-            node.put("role", e.role().name());
+            node.put("itemId", e.itemId().toString());
             node.put("answerText", e.answerText());
             node.put("source", e.source());
         } else {
@@ -59,14 +58,14 @@ final class DecisionEventCodec {
         String type = node.get("type").asText();
         return switch (type) {
             case "Proposed" -> new DecisionEvent.Proposed(node.get("proposalText").asText());
-            case "Contested" -> new DecisionEvent.Contested(readRoleKeyed(node.get("items"), JsonNode::asText));
-            case "Classified" -> new DecisionEvent.Classified(readRoleKeyed(node.get("verdicts"), n -> Verdict.valueOf(n.asText())));
+            case "Contested" -> new DecisionEvent.Contested(readItemKeyed(node.get("items"), JsonNode::asText));
+            case "Classified" -> new DecisionEvent.Classified(readItemKeyed(node.get("verdicts"), n -> Verdict.valueOf(n.asText())));
             case "Revised" -> new DecisionEvent.Revised(node.get("revisionText").asText());
             case "Rechecked" -> new DecisionEvent.Rechecked(
-                    readRoleKeyed(node.get("verdicts"), n -> RecheckVerdict.valueOf(n.asText()))
+                    readItemKeyed(node.get("verdicts"), n -> RecheckVerdict.valueOf(n.asText()))
             );
             case "QuestionAnsweredExternally" -> new DecisionEvent.QuestionAnsweredExternally(
-                    Roles.byName(node.get("role").asText()),
+                    ItemId.parse(node.get("itemId").asText()),
                     node.get("answerText").asText(),
                     node.get("source").asText()
             );
@@ -74,9 +73,9 @@ final class DecisionEventCodec {
         };
     }
 
-    private static <V> Map<Role, V> readRoleKeyed(JsonNode node, Function<JsonNode, V> valueReader) {
-        Map<Role, V> result = new LinkedHashMap<>();
-        node.fields().forEachRemaining(entry -> result.put(Roles.byName(entry.getKey()), valueReader.apply(entry.getValue())));
+    private static <V> Map<ItemId, V> readItemKeyed(JsonNode node, Function<JsonNode, V> valueReader) {
+        Map<ItemId, V> result = new LinkedHashMap<>();
+        node.fields().forEachRemaining(entry -> result.put(ItemId.parse(entry.getKey()), valueReader.apply(entry.getValue())));
         return result;
     }
 }

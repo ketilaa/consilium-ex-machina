@@ -16,12 +16,13 @@ import org.junit.jupiter.api.Test;
 class QuestionGateTest {
 
     private static final Role QUESTION_ROLE = Roles.SECURITY_REVIEWER;
+    private static final ItemId QUESTION_ITEM = new ItemId(QUESTION_ROLE, 0);
 
     private static List<DecisionEvent> baseEventsWithOpenQuestion() {
         return List.of(
                 new DecisionEvent.Proposed("retain for 7 years"),
-                new DecisionEvent.Contested(Map.of(QUESTION_ROLE, "what's the real minimum?")),
-                new DecisionEvent.Classified(Map.of(QUESTION_ROLE, Verdict.QUESTION))
+                new DecisionEvent.Contested(Map.of(QUESTION_ITEM, "what's the real minimum?")),
+                new DecisionEvent.Classified(Map.of(QUESTION_ITEM, Verdict.QUESTION))
         );
     }
 
@@ -29,7 +30,7 @@ class QuestionGateTest {
     void aRecheckSayingResolvedDoesNotClearTheQuestionOnItsOwn() {
         var events = new java.util.ArrayList<>(baseEventsWithOpenQuestion());
         events.add(new DecisionEvent.Revised("self-answer attempt: confidently assuming 7 years"));
-        events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.RESOLVED)));
+        events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.RESOLVED)));
 
         DecisionState state = DecisionState.fold(events);
 
@@ -42,7 +43,7 @@ class QuestionGateTest {
         var events = new java.util.ArrayList<>(baseEventsWithOpenQuestion());
         for (int round = 0; round < 5; round++) {
             events.add(new DecisionEvent.Revised("revision attempt " + round));
-            events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.RESOLVED)));
+            events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.RESOLVED)));
         }
 
         DecisionState state = DecisionState.fold(events);
@@ -54,10 +55,10 @@ class QuestionGateTest {
     void onlyAnExternalAnswerEventClearsTheQuestion() {
         var events = new java.util.ArrayList<>(baseEventsWithOpenQuestion());
         events.add(new DecisionEvent.Revised("self-answer attempt"));
-        events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.NOT_RESOLVED)));
-        events.add(new DecisionEvent.QuestionAnsweredExternally(QUESTION_ROLE, "Legal confirmed 3 years", "Legal"));
+        events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.NOT_RESOLVED)));
+        events.add(new DecisionEvent.QuestionAnsweredExternally(QUESTION_ITEM, "Legal confirmed 3 years", "Legal"));
         events.add(new DecisionEvent.Revised("final revision incorporating the real answer"));
-        events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ROLE, RecheckVerdict.RESOLVED)));
+        events.add(new DecisionEvent.Rechecked(Map.of(QUESTION_ITEM, RecheckVerdict.RESOLVED)));
 
         DecisionState state = DecisionState.fold(events);
 
@@ -68,14 +69,14 @@ class QuestionGateTest {
     @Test
     void externalAnswerEventRejectsBlankSource() {
         assertThatThrownBy(() ->
-                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ROLE, "Legal confirmed 3 years", " ")
+                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ITEM, "Legal confirmed 3 years", " ")
         ).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void externalAnswerEventRejectsBlankAnswerText() {
         assertThatThrownBy(() ->
-                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ROLE, " ", "Legal")
+                new DecisionEvent.QuestionAnsweredExternally(QUESTION_ITEM, " ", "Legal")
         ).isInstanceOf(IllegalArgumentException.class);
     }
 }

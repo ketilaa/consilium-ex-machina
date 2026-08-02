@@ -18,6 +18,8 @@ class DecisionLifecycleServiceTest {
     private static final Role OWNER = Roles.RELEASE_MANAGER;
     private static final Role ISSUE_ROLE = Roles.BACKEND_DEVELOPER;
     private static final Role QUESTION_ROLE = Roles.SECURITY_REVIEWER;
+    private static final ItemId ISSUE_ITEM = new ItemId(ISSUE_ROLE, 0);
+    private static final ItemId QUESTION_ITEM = new ItemId(QUESTION_ROLE, 0);
 
     private static Decision newDecision() {
         return new Decision(
@@ -55,7 +57,7 @@ class DecisionLifecycleServiceTest {
         service.recheck(decision);
         assertThat(decision.state().status()).isEqualTo(DecisionStatus.BLOCKED_ON_QUESTION);
 
-        service.resolveQuestionExternally(decision, QUESTION_ROLE, "Legal confirmed 3 years", "Legal");
+        service.resolveQuestionExternally(decision, QUESTION_ITEM, "Legal confirmed 3 years", "Legal");
         service.reviseFinal(decision);
         service.recheck(decision);
 
@@ -105,7 +107,49 @@ class DecisionLifecycleServiceTest {
         service.classify(decision);
 
         assertThatThrownBy(() ->
-                service.resolveQuestionExternally(decision, ISSUE_ROLE, "some answer", "Legal")
+                service.resolveQuestionExternally(decision, ISSUE_ITEM, "some answer", "Legal")
         ).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void aRoleRaisingTwoDistinctConcernsGetsThemSplitAndAnsweringOneLeavesTheOtherOpen() {
+        // Security Reviewer raises two distinct missing facts in one reaction -- exactly the
+        // shape a live run against a real model produced once the challenger was taught the
+        // ENGINEERING TRADE-OFF / MISSING FACT distinction. Both must be tracked
+        // independently: answering the retention-period one must not silently resolve the
+        // unrelated cost one.
+        ScriptedChatModel model = new ScriptedChatModel(
+                "Retain for seven years, store in S3.",
+                "ENGINEERING TRADE-OFF: No archiving strategy -- the table will grow without bound.",
+                "MISSING FACT: What's the actual minimum retention period? I don't have access.\n\n"
+                        + "MISSING FACT: What's the cost implication of long-term storage? Finance would know.",
+                "1. [BLOCKING] no archiving strategy.\n2. [QUESTION] retention period requires Legal.\n"
+                        + "3. [QUESTION] cost implication requires Finance.",
+                "Added a one-year archiving policy. Assuming 7 years and a modest budget for now.",
+                "RESOLVED. Archiving policy addresses my concern.",
+                "NOT RESOLVED. Still just an assumption about the retention period.",
+                "NOT RESOLVED. Still just an assumption about cost, not a real answer from Finance."
+        );
+        DecisionLifecycleService service = new DecisionLifecycleService(model);
+        Decision decision = newDecision();
+
+        service.propose(decision);
+        service.contest(decision, List.of(ISSUE_ROLE, QUESTION_ROLE));
+
+        ItemId retentionItem = new ItemId(QUESTION_ROLE, 0);
+        ItemId costItem = new ItemId(QUESTION_ROLE, 1);
+        assertThat(decision.state().raisedItems()).containsKeys(ISSUE_ITEM, retentionItem, costItem);
+
+        service.classify(decision);
+        service.reviseSelfAnswerAttempt(decision);
+        service.recheck(decision);
+
+        assertThat(decision.state().openQuestions()).extracting(Question::itemId)
+                .containsExactlyInAnyOrder(retentionItem, costItem);
+
+        service.resolveQuestionExternally(decision, retentionItem, "Legal confirmed 3 years", "Legal");
+
+        assertThat(decision.state().openQuestions()).extracting(Question::itemId).containsExactly(costItem);
+        assertThat(decision.state().status()).isEqualTo(DecisionStatus.BLOCKED_ON_QUESTION);
     }
 }

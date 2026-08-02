@@ -15,6 +15,7 @@ import com.github.ketilaa.consilium.decisions.port.ChatModel;
 import com.github.ketilaa.consilium.decisions.port.DecisionRepository;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -91,28 +92,68 @@ public final class DecisionEngineCli {
         DecisionState afterFirstRecheck = decision.state();
         System.out.println("State: " + afterFirstRecheck.status());
 
-        if (!afterFirstRecheck.openQuestions().isEmpty()) {
-            for (Question question : afterFirstRecheck.openQuestions()) {
-                System.out.println("Open question (" + question.role() + "): " + question.text());
+        List<Question> openQuestions = afterFirstRecheck.openQuestions();
+        if (!openQuestions.isEmpty()) {
+            boolean answeredAny = false;
+            for (Question question : openQuestions) {
+                System.out.println("Open question (" + question.itemId() + "): " + question.text());
+                // In a real workflow an answer comes from a human or another system, not
+                // this CLI -- a small set of prepared answers is hardcoded here only
+                // because this is a scripted demo. Each open item is matched against them
+                // independently: answering one never resolves another, even one raised by
+                // the same role, and an item matching nothing prepared is left genuinely
+                // open rather than forced to a canned answer it doesn't actually fit.
+                Optional<PreparedAnswer> match = findPreparedAnswer(question.text());
+                if (match.isPresent()) {
+                    PreparedAnswer answer = match.get();
+                    service.resolveQuestionExternally(decision, question.itemId(), answer.text(), answer.source());
+                    answeredAny = true;
+                } else {
+                    System.out.println("  -- left open: no prepared answer matches this demo's known topics");
+                }
             }
-            // In a real workflow this answer comes from a human or another system, not this
-            // CLI -- hardcoded here only because this is a scripted demo. The point being
-            // demonstrated is WHERE it comes from (a call the owner's own text can never
-            // reach), not that it's realistic to hardcode it.
-            service.resolveQuestionExternally(
-                    decision,
-                    questionRole,
+            if (answeredAny) {
+                service.reviseFinal(decision);
+                service.recheck(decision);
+            }
+        }
+
+        DecisionState finalState = decision.state();
+        System.out.println("Final state: " + finalState.status());
+        if (!finalState.openQuestions().isEmpty()) {
+            System.out.println("Still open:");
+            for (Question question : finalState.openQuestions()) {
+                System.out.println("  - " + question.itemId() + ": " + question.text());
+            }
+        }
+        repository.save(decision);
+        System.out.println("Persisted to " + storeDir.resolve(id + ".jsonl"));
+    }
+
+    /** A tiny set of demo-only answers for the fixed scenario this CLI runs -- not a general mechanism. */
+    private record PreparedAnswer(List<String> keywords, String text, String source) {
+    }
+
+    private static final List<PreparedAnswer> PREPARED_ANSWERS = List.of(
+            new PreparedAnswer(
+                    List.of("retention period", "retention requirement", "regulatory requirement"),
                     "Legal confirmed the minimum contractual retention requirement is 3 years for "
                             + "enterprise customers under the current MSA.",
                     "Legal"
-            );
-            service.reviseFinal(decision);
-            service.recheck(decision);
-        }
+            ),
+            new PreparedAnswer(
+                    List.of("cost implication", "cost of storing", "pricing model", "budget"),
+                    "Finance approved a budget ceiling that fully covers cold-storage costs for the "
+                            + "expected data volume over the full retention period.",
+                    "Finance"
+            )
+    );
 
-        System.out.println("Final state: " + decision.state().status());
-        repository.save(decision);
-        System.out.println("Persisted to " + storeDir.resolve(id + ".jsonl"));
+    private static Optional<PreparedAnswer> findPreparedAnswer(String questionText) {
+        String lower = questionText.toLowerCase(Locale.ROOT);
+        return PREPARED_ANSWERS.stream()
+                .filter(answer -> answer.keywords().stream().anyMatch(lower::contains))
+                .findFirst();
     }
 
     private static void show(DecisionRepository repository, String id) {

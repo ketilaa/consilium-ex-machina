@@ -17,6 +17,10 @@ final class LifecyclePrompts {
                 + "with your reasoning. Keep it to a few paragraphs.";
     }
 
+    /** The two literal labels {@link LabeledItemSplitter} splits on -- keep these two definitions in sync. */
+    static final String ENGINEERING_TRADE_OFF_LABEL = "ENGINEERING TRADE-OFF";
+    static final String MISSING_FACT_LABEL = "MISSING FACT";
+
     static String challenger(Role challenger) {
         // Teaches the challenger the same BLOCKING-vs-missing-fact distinction the
         // classifier already uses -- not a scripted answer, just something concrete to
@@ -25,27 +29,32 @@ final class LifecyclePrompts {
         // a genuine external-fact gap, even when one exists -- confirmed live: two
         // unscripted CLI runs against a real model both landed on BLOCKING/NON_BLOCKING
         // for a concern that should plausibly have been a missing fact, never QUESTION.
+        //
+        // Also requires each distinct concern to start its own paragraph with one of the
+        // two literal labels below, so LabeledItemSplitter can split a single reaction
+        // into several independently-tracked items -- a real reaction, once given this
+        // framing, naturally raises more than one concern of different kinds in one turn.
         return challenger.mandate() + "\n\n"
                 + "Someone has proposed a decision. Review it strictly from your own mandate. "
                 + "Raise concrete concerns, risks, or alternatives it does not address. Do not "
                 + "restate what you agree with. If you genuinely have no concerns from your "
                 + "mandate, say so in one sentence instead of inventing filler issues.\n\n"
-                + "As you raise a concern, it will be one of two different kinds -- say "
-                + "explicitly which kind yours is:\n\n"
-                + "- An ENGINEERING TRADE-OFF: something the proposal's owner could actually "
-                + "resolve by revising the approach, using better engineering judgment. State "
-                + "it as a concrete problem with a plausible fix.\n"
-                + "- A GENUINE MISSING FACT: something that depends on information nobody in "
-                + "this discussion has access to -- a business decision, a legal or "
+                + "You may raise more than one distinct concern. Each one will be one of two "
+                + "different kinds:\n\n"
+                + "- An " + ENGINEERING_TRADE_OFF_LABEL + ": something the proposal's owner "
+                + "could actually resolve by revising the approach, using better engineering "
+                + "judgment.\n"
+                + "- A " + MISSING_FACT_LABEL + ": something that depends on information "
+                + "nobody in this discussion has access to -- a business decision, a legal or "
                 + "contractual requirement, a specific number, or a policy -- that no amount "
-                + "of engineering reasoning could resolve. If this is what you're raising, say "
-                + "explicitly that you don't have access to this information, name who would "
-                + "(e.g. Legal, Finance, Compliance, a product owner), and say plainly that "
-                + "revising the engineering approach cannot substitute for actually knowing "
-                + "the answer.\n\n"
-                + "Only raise a missing-fact concern if it's genuinely one -- don't relabel an "
-                + "ordinary engineering trade-off as a missing fact just to make it sound more "
-                + "serious.";
+                + "of engineering reasoning could resolve. Only raise this kind if it's "
+                + "genuinely one -- don't relabel an ordinary engineering trade-off as a "
+                + "missing fact just to make it sound more serious. If this is what you're "
+                + "raising, say explicitly that you don't have access to this information and "
+                + "name who would (e.g. Legal, Finance, Compliance, a product owner).\n\n"
+                + "Write each distinct concern as its own paragraph. Start that paragraph with "
+                + "EXACTLY one of the literal labels '" + ENGINEERING_TRADE_OFF_LABEL + ":' or '"
+                + MISSING_FACT_LABEL + ":', followed by the concern itself.";
     }
 
     static final String CLASSIFY_DEFINITIONS =

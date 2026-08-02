@@ -14,6 +14,10 @@ import java.util.Map;
  * is the one and only path that can clear a Question -- {@link #reviseSelfAnswerAttempt} and
  * {@link #reviseFinal} can never reach it, however confident the owner's text sounds.
  *
+ * <p>A single challenger role can raise more than one distinct concern in one reaction
+ * (see {@link ItemSplitter}); each is tracked, classified, and rechecked independently by
+ * {@link ItemId}, not collapsed into one verdict per role.
+ *
  * <p>Every applied event is also published via {@link DecisionEventPublisher} -- the real
  * integration seam for anything built on top of this later (a future event bus, a future
  * work-item graph). This service never needs to know who, if anyone, is listening.
@@ -23,22 +27,25 @@ public final class DecisionLifecycleService {
     private final ChatModel chatModel;
     private final VerdictParser verdictParser;
     private final RecheckParser recheckParser;
+    private final ItemSplitter itemSplitter;
     private final DecisionEventPublisher publisher;
 
     public DecisionLifecycleService(ChatModel chatModel) {
-        this(chatModel, new TagScanningVerdictParser(), new TagScanningRecheckParser(), (id, event) -> { });
+        this(chatModel, new TagScanningVerdictParser(), new TagScanningRecheckParser(), new LabeledItemSplitter(), (id, event) -> { });
     }
 
     public DecisionLifecycleService(ChatModel chatModel, DecisionEventPublisher publisher) {
-        this(chatModel, new TagScanningVerdictParser(), new TagScanningRecheckParser(), publisher);
+        this(chatModel, new TagScanningVerdictParser(), new TagScanningRecheckParser(), new LabeledItemSplitter(), publisher);
     }
 
     public DecisionLifecycleService(
-            ChatModel chatModel, VerdictParser verdictParser, RecheckParser recheckParser, DecisionEventPublisher publisher
+            ChatModel chatModel, VerdictParser verdictParser, RecheckParser recheckParser,
+            ItemSplitter itemSplitter, DecisionEventPublisher publisher
     ) {
         this.chatModel = chatModel;
         this.verdictParser = verdictParser;
         this.recheckParser = recheckParser;
+        this.itemSplitter = itemSplitter;
         this.publisher = publisher;
     }
 
@@ -47,33 +54,40 @@ public final class DecisionLifecycleService {
         apply(decision, new DecisionEvent.Proposed(proposal));
     }
 
-    /** Challengers react in their own words -- nothing here labels an item Issue or Question; classify() does. */
+    /**
+     * Challengers react in their own words -- nothing here labels an item Issue or Question;
+     * classify() does. Each role's single reaction is split (see {@link ItemSplitter}) into
+     * however many distinct concerns it actually contains, each becoming its own {@link ItemId}.
+     */
     public void contest(Decision decision, List<Role> challengerRoles) {
         String proposal = latestProposal(decision);
-        Map<Role, String> raised = new LinkedHashMap<>();
+        Map<ItemId, String> raised = new LinkedHashMap<>();
         for (Role role : challengerRoles) {
             String reaction = chatModel.respond(
                     LifecyclePrompts.challenger(role),
                     decisionBrief(decision) + "\n\nProposed decision:\n" + proposal
             );
-            raised.put(role, reaction);
+            List<String> items = itemSplitter.split(reaction);
+            for (int i = 0; i < items.size(); i++) {
+                raised.put(new ItemId(role, i), items.get(i));
+            }
         }
         apply(decision, new DecisionEvent.Contested(raised));
     }
 
     public void classify(Decision decision) {
-        Map<Role, String> items = decision.state().raisedItems();
+        Map<ItemId, String> items = decision.state().raisedItems();
         if (items.isEmpty()) {
             apply(decision, new DecisionEvent.Classified(Map.of()));
             return;
         }
-        List<Role> rolesInOrder = List.copyOf(items.keySet());
+        List<ItemId> idsInOrder = List.copyOf(items.keySet());
         String response = chatModel.respond(
                 LifecyclePrompts.classify(),
                 decisionBrief(decision) + "\n\nProposed decision:\n" + latestProposal(decision)
                         + "\n\nRaised items:\n" + itemsText(items)
         );
-        apply(decision, new DecisionEvent.Classified(verdictParser.parse(response, rolesInOrder)));
+        apply(decision, new DecisionEvent.Classified(verdictParser.parse(response, idsInOrder)));
     }
 
     public void reviseSelfAnswerAttempt(Decision decision) {
@@ -90,22 +104,23 @@ public final class DecisionLifecycleService {
     public void recheck(Decision decision) {
         DecisionState state = decision.state();
         String latestRevision = latestRevision(decision);
-        Map<Role, RecheckVerdict> rechecks = new LinkedHashMap<>();
-        for (Map.Entry<Role, Verdict> entry : state.verdicts().entrySet()) {
-            Role role = entry.getKey();
+        Map<ItemId, RecheckVerdict> rechecks = new LinkedHashMap<>();
+        for (Map.Entry<ItemId, Verdict> entry : state.verdicts().entrySet()) {
+            ItemId id = entry.getKey();
             Verdict verdict = entry.getValue();
             if (verdict == Verdict.NON_BLOCKING) {
                 continue;
             }
+            Role role = id.role();
             boolean isQuestion = verdict == Verdict.QUESTION;
             String systemPrompt = isQuestion ? LifecyclePrompts.questionRecheck(role) : LifecyclePrompts.issueRecheck(role);
             String label = isQuestion ? "question" : "concern";
             String response = chatModel.respond(
                     systemPrompt,
-                    decisionBrief(decision) + "\n\nYour original " + label + ":\n" + state.raisedItems().get(role)
+                    decisionBrief(decision) + "\n\nYour original " + label + ":\n" + state.raisedItems().get(id)
                             + "\n\nRevised decision:\n" + latestRevision
             );
-            rechecks.put(role, recheckParser.parse(response));
+            rechecks.put(id, recheckParser.parse(response));
         }
         apply(decision, new DecisionEvent.Rechecked(rechecks));
     }
@@ -114,21 +129,22 @@ public final class DecisionLifecycleService {
      * The ONLY method that can construct a {@link DecisionEvent.QuestionAnsweredExternally}
      * event. There is no code path from {@link #reviseSelfAnswerAttempt} or
      * {@link #reviseFinal} to this method -- an owner's own revision text can never satisfy
-     * this gate, no matter how the text reads.
+     * this gate, no matter how the text reads. Answering one item never resolves another,
+     * even one raised by the same role.
      */
-    public void resolveQuestionExternally(Decision decision, Role role, String answerText, String source) {
-        Verdict verdict = decision.state().verdicts().get(role);
+    public void resolveQuestionExternally(Decision decision, ItemId itemId, String answerText, String source) {
+        Verdict verdict = decision.state().verdicts().get(itemId);
         if (verdict != Verdict.QUESTION) {
-            throw new IllegalStateException(role + " is not currently classified QUESTION (was: " + verdict + ")");
+            throw new IllegalStateException(itemId + " is not currently classified QUESTION (was: " + verdict + ")");
         }
-        apply(decision, new DecisionEvent.QuestionAnsweredExternally(role, answerText, source));
+        apply(decision, new DecisionEvent.QuestionAnsweredExternally(itemId, answerText, source));
     }
 
     /** Only meaningful once at least one Question has been answered externally. */
     public void reviseFinal(Decision decision) {
         DecisionState state = decision.state();
         StringBuilder answers = new StringBuilder();
-        for (Map.Entry<Role, String> entry : state.externalAnswers().entrySet()) {
+        for (Map.Entry<ItemId, String> entry : state.externalAnswers().entrySet()) {
             answers.append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
         }
         String response = chatModel.respond(
@@ -150,9 +166,9 @@ public final class DecisionLifecycleService {
         return "Decision: " + decision.title() + "\n\nCategory: " + decision.category();
     }
 
-    private static String itemsText(Map<Role, String> items) {
+    private static String itemsText(Map<ItemId, String> items) {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Role, String> entry : items.entrySet()) {
+        for (Map.Entry<ItemId, String> entry : items.entrySet()) {
             sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n\n");
         }
         return sb.toString().strip();
