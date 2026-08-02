@@ -13,10 +13,10 @@ Decision-making / consensus mechanics: [docs/design/decision-making.md](docs/des
 
 ## Current phase
 
-Design phase for the platform itself — no production/platform code yet. But the riskiest,
-most load-bearing assumptions behind the design are being validated with real proof-of-concept
-experiments (under `proof-of-concept/*/`, run against local models) before any platform code gets
-written, rather than argued from first principles alone. Findings are written up in `docs/learning/`:
+The riskiest, most load-bearing assumptions behind the design were validated with real
+proof-of-concept experiments (under `proof-of-concept/*/`, run against local models) before
+any platform code got written, rather than argued from first principles alone. Findings are
+written up in `docs/learning/`:
 
 - [poc-decision-making.md](docs/learning/poc-decision-making.md) — the propose/contest/refute/
   converge lifecycle and the ownership/veto authority model. Validated, including a real bug found
@@ -57,8 +57,27 @@ No next PoC candidate queued yet — the validated mechanics (decision lifecycle
 question surfacing, question gating, and now the parsing-format question) cover the load-bearing
 assumptions identified so far.
 
-Before proposing platform code structure, read the architecture doc and the PoC findings above; the
-domain model should stay grounded in what's actually been tested, not just what's designed.
+## Platform code
+
+`decision-engine/` (Java, Gradle) is the first real, kept platform component — not another PoC
+script. It implements the validated Decision lifecycle (propose/contest/classify/revise/recheck)
+as an event-sourced domain model, with both validated fixes as unconditional domain rules: the
+targeted per-raiser recheck (never a generalist reclassifying from scratch), and a Question that
+can only be cleared by an externally-sourced answer (a code-level gate the owner's own text can
+never satisfy, not just a convention). See `decision-engine/build.gradle.kts` and the package
+`com.github.ketilaa.consilium.decisions` for the domain; `DecisionLifecycleService` is the
+orchestrator; `DecisionEngineCli` (`run`/`show <id>`) is the demo entry point.
+
+Deliberately deferred until a second real consumer justifies them: an event bus/message broker
+(the engine publishes via `DecisionEventPublisher`, but nothing subscribes yet beyond logging),
+a work-item graph (a Decision only carries an opaque `OriginReference`, never resolved by the
+engine itself), a network/HTTP API (v1 is a library + CLI), and the category→owner authority
+table, veto mechanics, and human approval gates from `docs/design/decision-making.md` (real
+design surface, but untested by any PoC yet — don't build ahead of evidence).
+
+Before proposing further platform code structure, read the architecture doc and the PoC findings
+above; the domain model should stay grounded in what's actually been tested, not just what's
+designed.
 
 ## Core terminology
 
