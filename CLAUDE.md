@@ -43,16 +43,19 @@ written, rather than argued from first principles alone. Findings are written up
   Also surfaced a second, ironic tag-parsing bug in the fix's own code (markdown formatting broke a
   strict prefix match, the same class of bug the first run's Finding 5 had just named) — fixed, and a
   reminder that naming a bug class doesn't make new code immune to it.
+- [poc-structured-output.md](docs/learning/poc-structured-output.md) — does forcing JSON-schema output
+  eliminate the tag-parsing bug class poc-question-gating.md found twice? More complicated than the
+  framing going in: an *already-hardened* free-text parser (permissive prefix matching,
+  markup-stripping) matched structured output's reliability exactly, 100%/100% across 48 trials each,
+  at roughly half the token/latency cost. Structured output also isn't truncation-proof — a tight
+  token budget broke every structured call in a stress test, and its own higher verbosity makes it
+  comparatively more exposed to that than free text. The validated fix was hardening the parser, not
+  switching formats; structured output's real remaining case (resilience against a future,
+  as-yet-unseen format surprise) is a claim this fixed-fixture test can't settle either way.
 
-Next candidate, not yet started: replace free-text tag scanning with forced structured output (a
-JSON-schema or tool-call response, not a regex over prose) for these classification/recheck steps.
-Every PoC so far that includes a classifier — poc-decision-making.md's refuter, poc-questions.md's
-QUESTION/PROCEEDING protocol, and poc-question-gating.md's BLOCKING/QUESTION/RESOLVED tags — has hit
-at least one instance of a model's free-text formatting breaking a hand-written parser (a colon inside
-a bracket, markdown bold around a verdict). Two independent bugs of exactly this shape were found and
-fixed in poc-question-gating.md alone. Test whether forcing the model to call a schema-defined tool
-instead of emitting a tagged string eliminates this whole class of bug, rather than fixing parsers one
-format variant at a time.
+No next PoC candidate queued yet — the validated mechanics (decision lifecycle, context packets,
+question surfacing, question gating, and now the parsing-format question) cover the load-bearing
+assumptions identified so far.
 
 Before proposing platform code structure, read the architecture doc and the PoC findings above; the
 domain model should stay grounded in what's actually been tested, not just what's designed.

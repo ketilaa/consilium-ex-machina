@@ -1,0 +1,113 @@
+{
+  "classify": [
+    {
+      "fixture": "classify-audit-log-retention",
+      "condition": "freetext",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 66.9,
+      "mean_seconds": 8.7
+    },
+    {
+      "fixture": "classify-audit-log-retention",
+      "condition": "structured",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 137.6,
+      "mean_seconds": 18.0
+    },
+    {
+      "fixture": "classify-llm-inference-hosting",
+      "condition": "freetext",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 59.4,
+      "mean_seconds": 8.2
+    },
+    {
+      "fixture": "classify-llm-inference-hosting",
+      "condition": "structured",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 142.6,
+      "mean_seconds": 19.1
+    }
+  ],
+  "recheck": [
+    {
+      "fixture": "recheck-audit-log-retention-self-answer",
+      "condition": "freetext",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 59.0,
+      "mean_seconds": 8.4
+    },
+    {
+      "fixture": "recheck-audit-log-retention-self-answer",
+      "condition": "structured",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 92.8,
+      "mean_seconds": 12.7
+    },
+    {
+      "fixture": "recheck-audit-log-retention-final",
+      "condition": "freetext",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 40.9,
+      "mean_seconds": 5.5
+    },
+    {
+      "fixture": "recheck-audit-log-retention-final",
+      "condition": "structured",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 68.9,
+      "mean_seconds": 9.2
+    },
+    {
+      "fixture": "recheck-llm-inference-hosting-self-answer",
+      "condition": "freetext",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 40.2,
+      "mean_seconds": 5.9
+    },
+    {
+      "fixture": "recheck-llm-inference-hosting-self-answer",
+      "condition": "structured",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 104.8,
+      "mean_seconds": 14.1
+    },
+    {
+      "fixture": "recheck-llm-inference-hosting-final",
+      "condition": "freetext",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 54.6,
+      "mean_seconds": 7.3
+    },
+    {
+      "fixture": "recheck-llm-inference-hosting-final",
+      "condition": "structured",
+      "parse_success_rate": 1.0,
+      "correct_rate": 1.0,
+      "mean_completion_tokens": 85.5,
+      "mean_seconds": 11.4
+    }
+  ],
+  "truncation_stress": {
+    "parse_success_rate": 0.0,
+    "finish_reasons": [
+      "length",
+      "length",
+      "length",
+      "length",
+      "length",
+      "length"
+    ]
+  }
+}
