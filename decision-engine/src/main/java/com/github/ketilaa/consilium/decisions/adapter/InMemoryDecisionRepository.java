@@ -1,7 +1,9 @@
 package com.github.ketilaa.consilium.decisions.adapter;
 
 import com.github.ketilaa.consilium.decisions.Decision;
+import com.github.ketilaa.consilium.decisions.OriginReference;
 import com.github.ketilaa.consilium.decisions.port.DecisionRepository;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,5 +27,12 @@ public final class InMemoryDecisionRepository implements DecisionRepository {
     @Override
     public Optional<Decision> findById(String id) {
         return Optional.ofNullable(snapshots.get(id));
+    }
+
+    @Override
+    public List<Decision> findByOrigin(OriginReference origin) {
+        return snapshots.values().stream()
+                .filter(decision -> decision.origin().equals(origin))
+                .toList();
     }
 }

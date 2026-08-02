@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Persists each Decision as a JSON-lines file: one header line (id/title/category/owner/origin),
@@ -66,6 +67,30 @@ public final class FileDecisionRepository implements DecisionRepository {
         if (!Files.exists(path)) {
             return Optional.empty();
         }
+        return Optional.of(load(path));
+    }
+
+    /**
+     * A full directory scan -- v1 doesn't need an index, there's no volume yet to justify one.
+     * Revisit if a real work-item module ever needs this to be fast, not just correct.
+     */
+    @Override
+    public List<Decision> findByOrigin(OriginReference origin) {
+        if (!Files.isDirectory(directory)) {
+            return List.of();
+        }
+        try (Stream<Path> files = Files.list(directory)) {
+            return files
+                    .filter(path -> path.toString().endsWith(".jsonl"))
+                    .map(this::load)
+                    .filter(decision -> decision.origin().equals(origin))
+                    .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private Decision load(Path path) {
         try {
             List<String> lines = Files.readAllLines(path);
             JsonNode header = mapper.readTree(lines.get(0));
@@ -76,14 +101,14 @@ public final class FileDecisionRepository implements DecisionRepository {
                 }
                 events.add(codec.fromJson(mapper.readTree(lines.get(i))));
             }
-            return Optional.of(Decision.reconstruct(
+            return Decision.reconstruct(
                     header.get("id").asText(),
                     header.get("title").asText(),
                     header.get("category").asText(),
                     Roles.byName(header.get("ownerRole").asText()),
                     new OriginReference(header.get("origin").asText()),
                     events
-            ));
+            );
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

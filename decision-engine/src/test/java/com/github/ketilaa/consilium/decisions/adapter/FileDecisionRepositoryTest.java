@@ -94,4 +94,28 @@ class FileDecisionRepositoryTest {
 
         assertThat(repository.findById("does-not-exist")).isEmpty();
     }
+
+    @Test
+    void findByOriginReturnsOnlyDecisionsWithThatExactOrigin() {
+        OriginReference target = new OriginReference("work-item:feat-1");
+        Decision matching = new Decision("d-a", "Decision A", "Category", OWNER, target);
+        matching.apply(new DecisionEvent.Proposed("proposal A"));
+        Decision otherOrigin = new Decision("d-b", "Decision B", "Category", OWNER, new OriginReference("work-item:feat-2"));
+        otherOrigin.apply(new DecisionEvent.Proposed("proposal B"));
+
+        FileDecisionRepository repository = new FileDecisionRepository(tempDir);
+        repository.save(matching);
+        repository.save(otherOrigin);
+
+        List<Decision> found = repository.findByOrigin(target);
+
+        assertThat(found).extracting(Decision::id).containsExactly("d-a");
+    }
+
+    @Test
+    void findByOriginReturnsEmptyWhenNothingMatches() {
+        FileDecisionRepository repository = new FileDecisionRepository(tempDir);
+
+        assertThat(repository.findByOrigin(new OriginReference("work-item:nothing-here"))).isEmpty();
+    }
 }

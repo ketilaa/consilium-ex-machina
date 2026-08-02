@@ -59,21 +59,42 @@ assumptions identified so far.
 
 ## Platform code
 
-`decision-engine/` (Java, Gradle) is the first real, kept platform component — not another PoC
-script. It implements the validated Decision lifecycle (propose/contest/classify/revise/recheck)
-as an event-sourced domain model, with both validated fixes as unconditional domain rules: the
-targeted per-raiser recheck (never a generalist reclassifying from scratch), and a Question that
-can only be cleared by an externally-sourced answer (a code-level gate the owner's own text can
-never satisfy, not just a convention). See `decision-engine/build.gradle.kts` and the package
-`com.github.ketilaa.consilium.decisions` for the domain; `DecisionLifecycleService` is the
-orchestrator; `DecisionEngineCli` (`run`/`show <id>`) is the demo entry point.
+Multi-module Gradle build at the repo root (`settings.gradle.kts` includes both modules;
+root `gradlew` builds and tests everything).
 
-Deliberately deferred until a second real consumer justifies them: an event bus/message broker
-(the engine publishes via `DecisionEventPublisher`, but nothing subscribes yet beyond logging),
-a work-item graph (a Decision only carries an opaque `OriginReference`, never resolved by the
-engine itself), a network/HTTP API (v1 is a library + CLI), and the category→owner authority
-table, veto mechanics, and human approval gates from `docs/design/decision-making.md` (real
-design surface, but untested by any PoC yet — don't build ahead of evidence).
+**`decision-engine/`** — the first real, kept platform component, not another PoC script. It
+implements the validated Decision lifecycle (propose/contest/classify/revise/recheck) as an
+event-sourced domain model, with both validated fixes as unconditional domain rules: the
+targeted per-raiser recheck (never a generalist reclassifying from scratch), and a Question
+that can only be cleared by an externally-sourced answer (a code-level gate the owner's own
+text can never satisfy, not just a convention). Package `com.github.ketilaa.consilium.decisions`;
+`DecisionLifecycleService` is the orchestrator; `DecisionEngineCli` (`run [--origin <ref>]` /
+`show <id>`) is the demo entry point. A role can raise more than one distinct concern per
+reaction (`ItemId`, `ItemSplitter`) — a real gap a live run against a real model exposed and
+this codebase now handles, not something invented ahead of evidence.
+
+**`work-items/`** — the second real component, and the reason `OriginReference` needed no
+changes to accept it: Work Item is the umbrella concept `docs/high-level-architecture.md` and
+this file's own terminology already named (initiative/project/feature/story/task are its
+*kinds*, not sibling entities). Package `com.github.ketilaa.consilium.workitems`, same
+event-sourced/ports-and-adapters shape as `decisions` for consistency. `WorkItemDecisionsView`
+is the one place this module depends on `decisions` (via the new
+`DecisionRepository.findByOrigin`) — the reverse is never true, `decisions` still has no idea
+Work Items exist. "Related decisions" and "open questions" are **derived views**, not state
+Work Item stores itself, to avoid a second, driftable copy of facts the Decision Engine already
+owns. `WorkItemCli` (`create <kind> <title>` / `show <id>`) is the demo entry point; pair with
+`DecisionEngineCli run --origin work-item:<id>` to attach a real decision to a real work item —
+verified live, including the case where a Decision converges and the work item's open-questions
+count correctly drops to zero.
+
+Deliberately deferred until a further real need justifies them: an event bus/message broker
+(both modules' repositories are queried in-process/synchronously; `DecisionEventPublisher`
+still has no subscriber beyond logging), a network/HTTP API (still a library + CLI per module),
+strict Work Item kind-hierarchy validation (Task must be under Story, etc. — nothing has
+demanded it yet), and the category→owner authority table, veto mechanics, and human approval
+gates from `docs/design/decision-making.md` (real design surface, but untested by any PoC yet —
+don't build ahead of evidence; if this becomes the next priority, validate it with a PoC first,
+the same way question-gating was validated before being built).
 
 Before proposing further platform code structure, read the architecture doc and the PoC findings
 above; the domain model should stay grounded in what's actually been tested, not just what's

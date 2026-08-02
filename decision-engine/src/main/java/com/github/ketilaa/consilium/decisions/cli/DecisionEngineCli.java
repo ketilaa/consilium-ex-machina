@@ -37,7 +37,7 @@ public final class DecisionEngineCli {
         DecisionRepository repository = new FileDecisionRepository(storeDir);
 
         switch (args[0]) {
-            case "run" -> run(repository, storeDir);
+            case "run" -> run(repository, storeDir, parseOriginFlag(args));
             case "show" -> {
                 if (args.length < 2) {
                     System.err.println("Usage: show <decision-id>");
@@ -50,7 +50,17 @@ public final class DecisionEngineCli {
         }
     }
 
-    private static void run(DecisionRepository repository, Path storeDir) {
+    /** {@code run --origin work-item:feat-1} attaches the decision to a real work item; defaults to "cli:demo". */
+    private static String parseOriginFlag(String[] args) {
+        for (int i = 1; i < args.length - 1; i++) {
+            if (args[i].equals("--origin")) {
+                return args[i + 1];
+            }
+        }
+        return "cli:demo";
+    }
+
+    private static void run(DecisionRepository repository, Path storeDir, String originValue) {
         String baseUrl = System.getenv().getOrDefault("DECISION_ENGINE_MODEL_BASE_URL", "http://localhost:8081");
         String modelName = System.getenv().getOrDefault(
                 "DECISION_ENGINE_MODEL_NAME", "bartowski/mistralai_Mistral-Small-3.1-24B-Instruct-2503-GGUF"
@@ -71,7 +81,7 @@ public final class DecisionEngineCli {
                         + "log) before it can be purged or archived, and where should it be stored?",
                 "Compliance / data retention",
                 owner,
-                new OriginReference("cli:demo")
+                new OriginReference(originValue)
         );
 
         System.out.println("Decision " + id + " proposed (owner: " + owner + ")");
@@ -180,6 +190,7 @@ public final class DecisionEngineCli {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: DecisionEngineCli <run|show> [decision-id]");
+        System.out.println("Usage: DecisionEngineCli run [--origin <origin-reference>]");
+        System.out.println("       DecisionEngineCli show <decision-id>");
     }
 }
