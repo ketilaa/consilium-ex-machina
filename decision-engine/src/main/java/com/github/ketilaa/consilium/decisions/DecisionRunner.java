@@ -53,4 +53,20 @@ public final class DecisionRunner {
         repository.save(decision);
         return decision;
     }
+
+    /**
+     * Re-runs the final revision and recheck with no new external answer -- for when the prior
+     * attempt failed for a reason unrelated to the decision's own content (e.g. a response
+     * silently truncated by too small a token budget, caught on d-22ffab13 by a human reviewing
+     * an escalated decision and noticing the stored text ended mid-sentence). Safe to call any
+     * number of times: {@code reviseFinal} always incorporates every external answer recorded so
+     * far, not just the most recent one, and {@code recheck} always rechecks against whichever
+     * revision was most recently persisted.
+     */
+    public Decision retryFinalRevision(Decision decision) {
+        service.reviseFinal(decision);
+        service.recheck(decision);
+        repository.save(decision);
+        return decision;
+    }
 }

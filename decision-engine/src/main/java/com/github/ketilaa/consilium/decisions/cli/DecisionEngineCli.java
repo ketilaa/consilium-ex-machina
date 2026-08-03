@@ -21,11 +21,13 @@ import java.util.UUID;
  * {@code run} walks a decision through propose/contest/classify/revise/recheck against a real
  * local model and persists it; {@code answer} resolves one open Question with a real,
  * externally-sourced answer whenever it becomes available; {@code show} reloads a decision from
- * disk. Real content (title, context) should come from a Work Item wherever one exists -- see
- * work-items' {@code WorkItemCli propose-decision}, which sources both from the work item's own
- * stored fields and calls the same {@link DecisionRunner} this CLI uses. {@code run} here is for
- * standalone decisions with no work item behind them (or the original demo scenario, unchanged,
- * when no {@code --title} is given).
+ * disk; {@code retry} re-runs the final revision and recheck with no new answer, for when the
+ * prior attempt failed for a reason unrelated to the decision's own content (see
+ * {@link DecisionRunner#retryFinalRevision}). Real content (title, context) should come from a
+ * Work Item wherever one exists -- see work-items' {@code WorkItemCli propose-decision}, which
+ * sources both from the work item's own stored fields and calls the same {@link DecisionRunner}
+ * this CLI uses. {@code run} here is for standalone decisions with no work item behind them (or
+ * the original demo scenario, unchanged, when no {@code --title} is given).
  */
 public final class DecisionEngineCli {
 
@@ -57,6 +59,14 @@ public final class DecisionEngineCli {
                     return;
                 }
                 show(repository, args[1]);
+            }
+            case "retry" -> {
+                if (args.length < 2) {
+                    System.err.println("Usage: retry <decision-id>");
+                    System.exit(1);
+                    return;
+                }
+                retry(repository, args[1]);
             }
             default -> printUsage();
         }
@@ -125,6 +135,22 @@ public final class DecisionEngineCli {
         printStillOpen(decision);
     }
 
+    private static void retry(DecisionRepository repository, String decisionId) {
+        Optional<Decision> found = repository.findById(decisionId);
+        if (found.isEmpty()) {
+            System.err.println("No decision found with id " + decisionId);
+            System.exit(1);
+            return;
+        }
+
+        DecisionRunner runner = new DecisionRunner(buildChatModel(), new LoggingEventPublisher(), repository);
+        Decision decision = found.get();
+        runner.retryFinalRevision(decision);
+
+        System.out.println("Final state: " + decision.state().status());
+        printStillOpen(decision);
+    }
+
     private static void reportOutcome(Decision decision, Path storeDir, String id) {
         System.out.println("State: " + decision.state().status());
         for (Question question : decision.state().openQuestions()) {
@@ -174,5 +200,6 @@ public final class DecisionEngineCli {
         System.out.println("Usage: DecisionEngineCli run [--origin <origin-reference>]");
         System.out.println("       DecisionEngineCli answer <decision-id> <item-id> <answer-text> <source>");
         System.out.println("       DecisionEngineCli show <decision-id>");
+        System.out.println("       DecisionEngineCli retry <decision-id>  (re-runs the final revision + recheck, e.g. after a truncated response)");
     }
 }
