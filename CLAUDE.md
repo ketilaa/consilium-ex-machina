@@ -69,13 +69,28 @@ written up in `docs/learning/`:
   reasons — accepting a restated promise as an actual answer (a likely-fixable missing prompt safeguard),
   and conflating two different security concepts that share vocabulary (the same shape of error already
   found in the redundancy judge, not obviously fixable by a prompt tweak).
+- [poc-risk-classification.md](docs/learning/poc-risk-classification.md) — grounded in a real, live
+  decision this platform produced (d-22ffab13): two of its raised concerns were, on human review,
+  judged real but disproportionate to the work item's current risk profile — not blockers, but not
+  dismissible either. Tests adding a fourth classification, RISK, alongside BLOCKING/NON_BLOCKING/
+  QUESTION, asking the same question that mattered for Concur: does it defer genuinely disproportionate
+  concerns without also rubber-stamping real blockers? Cleaner result than any Concur variant got: 0%
+  false-defer rate across three scenarios (including a deliberate correctness-bug trap and a
+  high-pressure production profile designed to tempt over-deferral in both directions), and the five
+  real items from d-22ffab13 classified exactly as the human review already concluded. Recall was
+  imperfect (2 of 13 items) but precisely characterized, not noise — the classifier over-extends its
+  own "never RISK for a correctness defect" guardrail to any flatly-phrased security absence ("has no
+  rate limiting"), while identically-substantive concerns phrased as a conditional scenario ("if X
+  exceeds Y") get classified correctly. A scoped, obvious next fix, not a vague miss.
 
 No next PoC candidate queued for a new question. If Concur stays a priority, the next step is testing
 whether adding the missing "a promise isn't an answer" safeguard to the recheck's second step actually
 fixes the vague-promise failure mode, against the exact same negative fixtures — the conflation failure
 mode is a harder, more open problem, not obviously fixable the same way. If participation stays a
 priority, repeated trials of the *same* scenario to test whether the redundancy judge's verdict is a
-property of content or of the sample.
+property of content or of the sample. If RISK classification stays a priority, test whether telling the
+classifier a flatly-phrased absence can still be RISK (judge the harm it enables, not the sentence
+shape) fixes the recall gap without reopening the false-defer rate that held cleanly in this round.
 
 ## Platform code
 

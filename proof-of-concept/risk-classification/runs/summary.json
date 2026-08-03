@@ -1,0 +1,110 @@
+[
+  {
+    "slug": "role-registry-configurability",
+    "risk_recall": 1.0,
+    "false_defer_rate": 0.0,
+    "correct_blocking_rate": 1.0,
+    "per_item_tags": [
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "RISK",
+        "RISK",
+        "RISK"
+      ],
+      [
+        "RISK",
+        "RISK",
+        "RISK"
+      ]
+    ],
+    "per_item_consistent": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "slug": "payments-webhook-handler",
+    "risk_recall": 1.0,
+    "false_defer_rate": 0.0,
+    "correct_blocking_rate": 1.0,
+    "per_item_tags": [
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "RISK",
+        "RISK",
+        "RISK"
+      ],
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ]
+    ],
+    "per_item_consistent": [
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "slug": "internal-analytics-dashboard",
+    "risk_recall": 0.3333333333333333,
+    "false_defer_rate": 0.0,
+    "correct_blocking_rate": 1.0,
+    "per_item_tags": [
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "BLOCKING",
+        "BLOCKING",
+        "BLOCKING"
+      ],
+      [
+        "RISK",
+        "RISK",
+        "RISK"
+      ]
+    ],
+    "per_item_consistent": [
+      true,
+      true,
+      true,
+      true
+    ]
+  }
+]
