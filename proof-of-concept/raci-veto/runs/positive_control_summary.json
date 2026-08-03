@@ -1,0 +1,35 @@
+[
+  {
+    "slug": "audit-log-retention-positive-control",
+    "concur_role": "Security Reviewer",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_approved_at_least_once": false
+  },
+  {
+    "slug": "llm-inference-hosting-positive-control",
+    "concur_role": "Release Manager",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_approved_at_least_once": false
+  },
+  {
+    "slug": "api-rate-limiting-policy-positive-control",
+    "concur_role": "Security Reviewer",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_approved_at_least_once": false
+  }
+]

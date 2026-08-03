@@ -56,21 +56,19 @@ written up in `docs/learning/`:
   veto/authority section, previously untested: does RACI participation scoping (Informed gets no
   voice in contest) lose real signal, and does a cold Concur gate (a role that held no pen during
   propose/contest/revise, reviewing the final decision and asked a single yes/no question on its
-  own named grounds) add anything beyond the existing classify/recheck mechanism? First run (2
-  scenarios) leaned cautionary on both. A second run (5 scenarios, including independent re-samples
-  of the first run's own two) did not confirm that — it exposed a bigger problem instead: Concur
-  said "DO NOT CONCUR" in all 21 calls across both runs, never once approving anything, which means
-  its "divergence" can't be told apart from a reflexively negative gate (no positive-control
-  scenario was ever tried). The redundancy judge also flipped its verdict on both repeated
-  scenarios between runs on identical code and text, and one flip is checkable as a real error
-  (conflating a supply-chain-attack concern with an unrelated regression concern over a shared
-  word, "rollback"). Neither claim survives as confidently as the first run suggested — the honest
-  finding is that this measurement approach isn't yet trustworthy in either direction.
+  own named grounds) add anything beyond the existing classify/recheck mechanism? Participation is
+  still an open question — a second run's fuller data showed the redundancy judge flipping verdicts
+  on identical scenario text between runs, so the one real instance of harm found can't yet be told
+  apart from noise. Concur is settled, and negative, for the mechanism as designed: a third run
+  (a positive control — three fixtures hand-built to concretely close every real objection Concur
+  had raised) still got "DO NOT CONCUR" on all 9 calls, but never repeating a closed objection —
+  each found a different, deeper follow-on gap instead. The prompt has no notion of "sufficient," so
+  no revision, however thorough, could pass it; that's a prompt design flaw, not insufficient data.
 
-No next PoC candidate queued for a new question — if this mechanism stays a priority, the next step
-is a positive-control scenario for Concur (engineered so the honest answer should be CONCUR) and
-repeated trials of the *same* scenario to test whether the redundancy judge's verdict is a property
-of content or of the sample, not more new scenarios like the last two runs.
+No next PoC candidate queued for a new question — if Concur stays a priority, the next step is
+testing whether an explicit sufficiency criterion in the prompt changes this (untested); if
+participation stays a priority, repeated trials of the *same* scenario to test whether the
+redundancy judge's verdict is a property of content or of the sample.
 
 ## Platform code
 
@@ -108,12 +106,13 @@ still has no subscriber beyond logging), a network/HTTP API (still a library + C
 strict Work Item kind-hierarchy validation (Task must be under Story, etc. — nothing has
 demanded it yet), and the category→owner authority table, veto mechanics, and human approval
 gates from `docs/design/decision-making.md`. The category→owner table and human approval gates
-remain untested by any PoC. Veto now has two PoC runs' worth of evidence
-([poc-raci-veto.md](docs/learning/poc-raci-veto.md)), and it points at a measurement problem more
-than an answer — Concur never once approved anything across 21 calls (no positive control was ever
-tried), and the redundancy judge flipped its verdict on identical scenarios between runs. Nowhere
-near build-ready; don't build ahead of evidence, the same discipline that held before
-question-gating was validated.
+remain untested by any PoC. Veto now has three PoC runs' worth of evidence
+([poc-raci-veto.md](docs/learning/poc-raci-veto.md)). Concur specifically is settled and negative as
+currently designed: a positive-control run (fixtures built to close its own real objections) still
+got rejected every time, on a genuinely different follow-on gap each time — the prompt has no
+stopping condition, not just insufficient data. Participation is still unresolved either way (the
+redundancy judge flipped its verdict on identical scenarios between runs). Nowhere near build-ready;
+don't build ahead of evidence, the same discipline that held before question-gating was validated.
 
 Before proposing further platform code structure, read the architecture doc and the PoC findings
 above; the domain model should stay grounded in what's actually been tested, not just what's
