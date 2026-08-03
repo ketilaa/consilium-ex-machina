@@ -52,10 +52,24 @@ written up in `docs/learning/`:
   comparatively more exposed to that than free text. The validated fix was hardening the parser, not
   switching formats; structured output's real remaining case (resilience against a future,
   as-yet-unseen format surprise) is a claim this fixed-fixture test can't settle either way.
+- [poc-raci-veto.md](docs/learning/poc-raci-veto.md) — two claims from `docs/design/decision-making.md`'s
+  veto/authority section, previously untested: does RACI participation scoping (Informed gets no
+  voice in contest) lose real signal, and does a cold Concur gate (a role that held no pen during
+  propose/contest/revise, reviewing the final decision and asked a single yes/no question on its
+  own named grounds) add anything beyond the existing classify/recheck mechanism? Leans cautionary
+  on participation: in 2/2 scenarios the excluded role's withheld reaction was independently judged
+  non-redundant, and in the one deliberately stress-tested for it, that lost concern flipped a real
+  escalation into a false clean convergence — the "control" scenario never actually demonstrated
+  safety, it just failed to test the question cleanly, since other blocking items forced escalation
+  regardless. Concur got a decisive test in only the one scenario where the RACI mechanism converged
+  cleanly; there it consistently (3/3 reruns) blocked on a second, independent real gap that
+  participation restriction had also missed — real evidence it isn't redundant with what's already
+  built, but n=1 for the only scenario that could test the sharp claim, not enough to call validated.
 
-No next PoC candidate queued yet — the validated mechanics (decision lifecycle, context packets,
-question surfacing, question gating, and now the parsing-format question) cover the load-bearing
-assumptions identified so far.
+No next PoC candidate queued — this run's own scope limitations (only one scenario reached the
+precondition for testing Concur sharply; the RACI letter assignments were authored by this PoC's
+code, not an external authority table) point toward more replicates of the same design rather than
+a new question, if this becomes the next build priority.
 
 ## Platform code
 
@@ -92,9 +106,11 @@ Deliberately deferred until a further real need justifies them: an event bus/mes
 still has no subscriber beyond logging), a network/HTTP API (still a library + CLI per module),
 strict Work Item kind-hierarchy validation (Task must be under Story, etc. — nothing has
 demanded it yet), and the category→owner authority table, veto mechanics, and human approval
-gates from `docs/design/decision-making.md` (real design surface, but untested by any PoC yet —
-don't build ahead of evidence; if this becomes the next priority, validate it with a PoC first,
-the same way question-gating was validated before being built).
+gates from `docs/design/decision-making.md`. The category→owner table and human approval gates
+remain untested by any PoC. Veto now has one PoC's worth of preliminary evidence
+([poc-raci-veto.md](docs/learning/poc-raci-veto.md)) — cautionary on RACI participation scoping,
+and Concur showed real value but only in n=1 decisive trial — not yet build-ready; don't build
+ahead of evidence, the same discipline that held before question-gating was validated.
 
 Before proposing further platform code structure, read the architecture doc and the PoC findings
 above; the domain model should stay grounded in what's actually been tested, not just what's

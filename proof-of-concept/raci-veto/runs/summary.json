@@ -1,0 +1,34 @@
+[
+  {
+    "slug": "audit-log-retention",
+    "baseline_state": "escalated_to_human",
+    "raci_state": "escalated_to_human",
+    "terminal_state_differs": false,
+    "informed_role": "Performance Reviewer",
+    "informed_reaction_judged_new": true,
+    "concur_role": "Security Reviewer",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_diverged_from_clean_raci_convergence": false
+  },
+  {
+    "slug": "llm-inference-hosting",
+    "baseline_state": "escalated_to_human",
+    "raci_state": "converged",
+    "terminal_state_differs": true,
+    "informed_role": "Security Reviewer",
+    "informed_reaction_judged_new": true,
+    "concur_role": "Release Manager",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_diverged_from_clean_raci_convergence": true
+  }
+]
