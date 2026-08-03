@@ -7,7 +7,7 @@ CLAUDE.md explicitly defers pending a PoC, the same way question-gating was vali
 built. This PoC tests two distinct claims raised while designing that mechanism, not the ownership table
 itself (unchanged, untested here).
 
-**This document reports four runs.** The first run (2 scenarios) produced a confident, cautionary
+**This document reports five runs.** The first run (2 scenarios) produced a confident, cautionary
 headline: participation restriction looked risky, and Concur looked like it added real value. The
 second run (5 scenarios, including independent re-samples of the first run's own two) does not confirm
 that headline — it complicates it in a way that matters more than additional data points alone,
@@ -17,8 +17,10 @@ positive control built directly from the second run's own transcripts — hand-a
 engineered to concretely close every real, quoted objection Concur had raised — and it turns Finding 1
 from an open question into a settled, structural one: the prompt has no stopping condition. The fourth
 run tests two candidate fixes for that head-to-head against the original prompt, and finds one works
-and one backfires (Finding 1b). All four runs' raw results are kept below rather than silently replaced,
-because the discrepancy between them is itself the most important finding this PoC produced.
+and one backfires (Finding 1b) — but only on the positive case. The fifth run tests the surviving fix's
+negative case (does it correctly still reject a bad revision) and reverses the optimism: it doesn't,
+reliably (Finding 1c). All five runs' raw results are kept below rather than silently replaced, because
+the discrepancy between them is itself the most important finding this PoC produced.
 
 ## Objective
 
@@ -112,6 +114,22 @@ A and B are tested against both fixtures (does it ever approve the thorough one;
 reject the thin one — approving thin content would be the opposite failure mode, equally disqualifying).
 C is inherently a before/after pair, since a recheck is meaningless without something to recheck against.
 
+Fifth run (`round2_negative_scenarios.py`, `run_round2_negative_test.py`): closes the gap run 4 left —
+every round-2 case there paired the thin fixture with the *positive* fixture (a revision engineered to
+resolve the stated concern). This run tests round 2 in isolation on revisions that should NOT resolve it,
+holding round 1's actual, already-collected concern text fixed (quoted verbatim from run 4's transcripts,
+repeat 1 per scenario) rather than re-spending calls on round 1, which was already shown reliable. Two
+fixtures per scenario:
+
+- `no_attempt_revision` — the negative fixture completely unchanged. The most basic possible check: if
+  round 2 approves the exact text it (via round 1) just rejected, it isn't discriminating at all.
+- `vague_gesture_revision` — the negative fixture plus one added paragraph of hand-wavy reassurance on
+  the concern's exact theme, with no concrete mechanism, number, or named control — deliberately mimicking
+  the vague language that fooled variant B in run 4.
+
+Both should get `DO NOT CONCUR` every time if round 2 is genuinely discriminating; 3 reruns each for
+consistency, the same discipline as every other Concur check in this PoC.
+
 **Model.** Single model throughout (`bartowski/mistralai_Mistral-Small-3.1-24B-Instruct-2503-GGUF`),
 confirmed to be the identical, continuously-running server process across all four runs (no restart, no
 config change between them) — the discrepancies below are genuine sampling variance and judge behavior,
@@ -164,6 +182,18 @@ concern each time (e.g. *"The revision directly addresses your original concern 
 to the archived data will be controlled via role-based access control and audited through a separate,
 append-only access log"*).
 
+**Run 5 — round 2 in isolation, negative case (should reject both):**
+
+| Scenario | No-attempt (unchanged) approved? | Vague-gesture approved? |
+|---|---|---|
+| audit-log-retention | 0/3 — correctly rejected | 0/3 — correctly rejected |
+| llm-inference-hosting | **1/3 — false positive** | **3/3 — false positive** |
+| api-rate-limiting-policy | **3/3 — false positive** | **3/3 — false positive** |
+
+**10 of 18 negative-case trials (56%) incorrectly said `CONCUR`.** Only `audit-log-retention` correctly
+rejected every case; the other two scenarios failed most or all of theirs — see Finding 1c for what the
+transcripts show is actually happening in each.
+
 ## Findings
 
 **1. Concur has never once returned `CONCUR`, across all three runs — and the positive control shows why:
@@ -208,12 +238,47 @@ did not have this problem: round 1, using a narrower "identify your single most 
 framing, still raised a real, specific concern against every one of the 9 thin-fixture reviews — it was
 never fooled into approving inadequate content outright. Round 2 then correctly recognized resolution,
 citing the specific mechanism that closed the specific concern it had itself raised, in all 9 cases, with
-no new objections introduced. This is the one variant in this entire PoC that behaves like a genuinely
-discriminating gate rather than a coin that always (or almost always) lands the same way. It reuses,
-rather than invents, the fix already validated for `issue_react_system`/`question_react_system` in
-`poc-decision-making.md` and `poc-question-gating.md` — the third time this project has found the same
-shape of fix (ask the specific party about its own specific item, don't let a generalist or an
-unconstrained single-shot review roam) working for a different mechanism.
+no new objections introduced. On this evidence alone, C looked like the one variant in this PoC that
+behaves like a genuinely discriminating gate — **run 5 shows that conclusion was premature; see Finding
+1c.** Round 2 had only ever been shown a revision engineered to succeed; asked to also reject one that
+shouldn't, it did not do so reliably.
+
+**1c. Round 2's negative case fails more often than it succeeds, for two distinct, diagnosable reasons —
+this reverses Finding 1b's optimism about variant C.** Run 5 held round 1's real, already-collected
+concern fixed and tested round 2 against two revisions that should NOT resolve it. Ten of 18 trials
+(56%) incorrectly said `CONCUR`. Only `audit-log-retention` discriminated correctly in every case,
+including against a vague-gesture revision worded the same way as the other two scenarios' — so the
+failure isn't universal, but it isn't rare either, and reading the transcripts shows two different
+mechanisms behind it, not one bug:
+
+- **Vague-promise acceptance** (`llm-inference-hosting`, 4 of 6 trials). Round 1's concern was *"does not
+  specify **how** the fallback mechanism will be tested and validated."* The vague-gesture fixture added
+  only: *"we will thoroughly test and validate the fallback mechanism to ensure it performs reliably and
+  safely."* Round 2 accepted this — a restated promise, not an actual answer — as resolving the concern:
+  *"The revision explicitly addresses my original concern by including a plan to 'thoroughly test and
+  validate the fallback mechanism'."* This is exactly the failure mode `question_react_system` was
+  written to guard against — its prompt explicitly says *"a promise to go find out later... does NOT
+  count as resolving it"* — but `concur_recheck_system` was modeled on the simpler `issue_react_system`
+  and never got that specific safeguard. A concrete, fixable gap in the transplant, not evidence the
+  two-step idea itself is unsound.
+- **Conceptual conflation** (`api-rate-limiting-policy`, 6 of 6 trials — every single one). Round 1's
+  concern was specifically about whether rate limiting *fails closed* during a gateway outage or
+  rollback. The unchanged negative fixture only ever discusses general high-availability measures
+  (multiple instances, automatic failover, health checks, redundancy) — keeping the gateway itself up,
+  not what happens to rate-limit enforcement in the window where it isn't. Round 2 accepted the former as
+  resolving the latter: *"The revision addresses my original concern by detailing how the gateway will
+  maintain high availability and failover mechanisms, ensuring that rate limits are enforced even during
+  outages."* This is a different, harder failure than a missing prompt warning — it's the same shape of
+  error as Finding 2's redundancy judge conflating supply-chain risk with regression risk over the shared
+  word "rollback": two substantively different concepts, sharing adjacent vocabulary, treated as the same
+  thing.
+
+`audit-log-retention`'s clean 0/6 shows round 2 *can* discriminate — its concern ("access control and
+audit trail are unspecified") had less room for this kind of reinterpretation than the other two. That
+makes the failure rate look like it depends on how exposed a given concern's phrasing is to vague-promise
+or adjacent-vocabulary reinterpretation, not a uniform property of the mechanism — consistent with, not
+contradicting, Finding 2's broader pattern of this model conflating topically related but substantively
+different things when a recheck step is asked to judge resolution.
 
 **2. The redundancy judge's own verdicts are not stable across independent samples of identical
 scenario text.** Both scenarios repeated from the first run flipped: `audit-log-retention` went `NEW →
@@ -255,32 +320,38 @@ on independent samples — so this PoC cannot currently say whether participatio
 general or whether that one trial was itself noise. That still needs the repeated-same-scenario design
 described below, not more new scenarios.
 
-On Concur: **the original design is settled negative, but a specific fix now has real, if preliminary,
-positive evidence.** The unbounded, single-shot cold review (variant A) cannot function as a pass/fail
-gate — it has no stopping condition and will always find the next meta-level gap. The tempting cheap fix
-(add a sufficiency instruction to the same single-shot prompt) makes things worse in a different way: it
-overshoots into approving genuinely inadequate decisions almost as often as good ones, which is not
-progress, it's a different kind of unusable. The structural fix — split into a narrower single-concern
-initial review plus a recheck that only ever judges its own previously-stated concern, exactly the
-pattern already validated twice for ordinary challengers — worked cleanly in this run: it wasn't fooled
-by thin content, and it approved thorough content for the right, specific reasons, every time it was
-tried.
+On Concur: **all three variants tried so far fail, in three different, now-diagnosed ways — none is
+build-ready, but the diagnoses point at different, unequal amounts of remaining work.** The unbounded,
+single-shot cold review (variant A) cannot function as a gate — it has no stopping condition and will
+always find the next meta-level gap. The sufficiency-criterion prompt (variant B) overshoots into
+approving genuinely inadequate decisions almost as often as good ones. The two-step recheck (variant C)
+looked like the fix — it never rubber-stamped a thin fixture outright in round 1, and it approved good
+content for the right, specific reasons in run 4 — but run 5 shows round 2 fails its negative case more
+than half the time, for two distinct reasons: accepting a restated promise as an actual answer (missing a
+safeguard `question_react_system` already has, a one-line, likely-fixable gap), and conflating two
+genuinely different concepts that share adjacent vocabulary (the same shape of error Finding 2 already
+found in the redundancy judge — not obviously fixable with a prompt tweak, since it's about the model's
+judgment, not its instructions).
 
-That's real signal, not a green light to build yet: this is one run, three scenarios, three repeats each,
-and round 2's ability to correctly still *reject* a revision that does NOT resolve the stated concern was
-never tested here — every round-2 case in this run was the positive fixture, engineered to succeed. The
-next step for Concur specifically is that missing negative case for round 2, not more positive
-demonstrations. For participation, the open question is unchanged: repeated trials of the *same*
-scenario (not just more scenarios) to establish whether the redundancy judge's verdict is a property of
-the content or a property of the sample.
+So the honest ranking is: A is settled, dead. B is settled, dead, in the opposite direction. C is not
+dead, but its one shown strength (round 1 never rubber-stamps) is now paired with a shown, serious
+weakness (round 2 often does) — net, still not usable, but with a specific, partially-scoped next fix
+(add the missing "a promise isn't an answer" warning to `concur_recheck_system`, then re-test the exact
+same negative fixtures) rather than a fully open question. For participation, the open question is
+unchanged: repeated trials of the *same* scenario (not just more scenarios) to establish whether the
+redundancy judge's verdict is a property of the content or a property of the sample.
 
 ## Scope limitations of this PoC
 
-- **Round 2 of the recheck variant (C) was never tested against a revision that should still fail.**
-  Every round-2 case in run 4 paired the negative fixture (round 1) with the positive fixture (round 2) —
-  a revision engineered to succeed. Whether round 2 correctly says `DO NOT CONCUR` when a revision does
-  *not* resolve the stated concern is untested; this is the load-bearing gap for trusting variant C, not
-  a nice-to-have.
+- **The proposed fix for round 2's vague-promise failure (borrowing `question_react_system`'s explicit
+  warning) is a hypothesis, not yet tested.** Finding 1c names it as the likely, concrete cause for the
+  `llm-inference-hosting` failures specifically; whether adding it actually fixes that case, and whether
+  it does anything for the `api-rate-limiting-policy` conflation failure (a different mechanism, probably
+  not addressed by the same one-line fix), is untested.
+- **Round 5 used one fixed round-1 concern per scenario (repeat 1 from run 4), not all three collected
+  variants.** Round 1's exact wording varied slightly between its own 3 reruns; whether round 2's
+  negative-case failure rate is sensitive to which of the three concern phrasings it's checking against
+  is untested.
 - **Variant B's overshoot was checked by re-reading the actual verdict text for 2 of 9 negative-fixture
   approvals**, not all 9 — the "rubber-stamping vague language" characterization is well-evidenced but
   not exhaustively graded across every case.
@@ -313,11 +384,16 @@ the content or a property of the sample.
   reruns still said no — but to a different, deeper objection each time, never a repeat. That's not a
   broken gate reciting the same line; it's a gate with no notion of "enough," which is arguably a more
   useful thing to know before building it.
-- **"The cheap fix rubber-stamped garbage; the real fix didn't."** Telling Concur "approve once it's
-  concretely addressed" did get it to approve good decisions — and genuinely thin ones almost as often,
-  reading "seven years is a common standard" as if it were an access-control policy. Splitting the review
-  into "state one concern" then "check only that concern" fixed both directions at once, without ever
-  being asked to distinguish good from bad in a single breath.
+- **"The cheap fix rubber-stamped garbage; the real fix didn't — until we actually tried to break it."**
+  Telling Concur "approve once it's concretely addressed" got it to approve good decisions and genuinely
+  thin ones almost as often. Splitting the review into "state one concern" then "check only that concern"
+  looked like it fixed both directions at once — until the next run showed the second step accepting a
+  restated promise as an answer, and separately confusing "the gateway stays up" with "rate limits fail
+  closed when it doesn't," over half the time.
+- **"Two different reasons for the same wrong answer."** One scenario's failure was a missing prompt
+  safeguard (a promise isn't proof); another's was the model conflating two genuinely different security
+  concepts that happen to share vocabulary. Same `CONCUR` verdict, same "wrong," completely different
+  fix — which is exactly why reading the transcripts mattered more than the pass/fail count.
 - **"The judge called two different risks the same risk because they shared a word."** Supply-chain
   compromise and ordinary regression risk both involve "rollback" — the redundancy judge conflated them.
   A concrete, checkable instance of exactly the kind of error an aggregate `NEW`/`REDUNDANT` count can't

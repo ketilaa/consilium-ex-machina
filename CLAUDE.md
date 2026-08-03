@@ -59,22 +59,23 @@ written up in `docs/learning/`:
   own named grounds) add anything beyond the existing classify/recheck mechanism? Participation is
   still an open question — a second run's fuller data showed the redundancy judge flipping verdicts
   on identical scenario text between runs, so the one real instance of harm found can't yet be told
-  apart from noise. Concur's original single-shot design is settled negative (a positive control
-  showed it has no notion of "sufficient" — every fixture, however thorough, got a different, deeper
-  follow-on objection instead of approval). A fourth run tested two fixes head-to-head: adding a
-  sufficiency instruction to the same single-shot prompt backfired (it started approving genuinely
-  thin, real decisions almost as often as thorough ones — a different, equally bad failure mode), but
-  splitting Concur into two steps — state one concern cold, then recheck only that concern against a
-  revision, forbidden from raising anything new, the same fix already validated twice for ordinary
-  challengers — worked cleanly every time it was tried. Real, if preliminary, positive evidence: the
-  recheck step's ability to correctly still *reject* an inadequate revision was never tested, only its
-  ability to approve a good one.
+  apart from noise. Concur went through three variants, all now settled dead in three different ways:
+  the original single-shot prompt has no notion of "sufficient" (a positive control showed every
+  fixture, however thorough, gets a different, deeper follow-on objection instead of approval); adding
+  a sufficiency instruction backfired into approving genuinely thin decisions almost as often as good
+  ones; splitting into a two-step recheck (state one concern, then check only that concern, reusing the
+  fix already validated for ordinary challengers) looked promising after one run, but a follow-up
+  testing its negative case found it accepts a bad revision 56% of the time, for two distinct, diagnosed
+  reasons — accepting a restated promise as an actual answer (a likely-fixable missing prompt safeguard),
+  and conflating two different security concepts that share vocabulary (the same shape of error already
+  found in the redundancy judge, not obviously fixable by a prompt tweak).
 
 No next PoC candidate queued for a new question. If Concur stays a priority, the next step is testing
-the two-step recheck's missing negative case (does round 2 correctly still reject when a revision does
-NOT resolve the stated concern) before treating it as validated. If participation stays a priority,
-repeated trials of the *same* scenario to test whether the redundancy judge's verdict is a property of
-content or of the sample.
+whether adding the missing "a promise isn't an answer" safeguard to the recheck's second step actually
+fixes the vague-promise failure mode, against the exact same negative fixtures — the conflation failure
+mode is a harder, more open problem, not obviously fixable the same way. If participation stays a
+priority, repeated trials of the *same* scenario to test whether the redundancy judge's verdict is a
+property of content or of the sample.
 
 ## Platform code
 
@@ -112,16 +113,15 @@ still has no subscriber beyond logging), a network/HTTP API (still a library + C
 strict Work Item kind-hierarchy validation (Task must be under Story, etc. — nothing has
 demanded it yet), and the category→owner authority table, veto mechanics, and human approval
 gates from `docs/design/decision-making.md`. The category→owner table and human approval gates
-remain untested by any PoC. Veto now has four PoC runs' worth of evidence
-([poc-raci-veto.md](docs/learning/poc-raci-veto.md)). Concur's original single-shot design is settled
-negative: a positive-control run (fixtures built to close its own real objections) still got rejected
-every time, on a genuinely different follow-on gap each time — the prompt has no stopping condition,
-not just insufficient data. A fourth run found a structural fix (state one concern, then recheck only
-that concern against a revision — reusing the fix already validated for ordinary challengers) that
-worked cleanly, while the cheaper prompt-only fix backfired into rubber-stamping thin decisions — real
-but preliminary, since the recheck's ability to correctly still reject an inadequate revision is
-untested. Participation is still unresolved either way (the redundancy judge flipped its verdict on
-identical scenarios between runs). Nowhere near build-ready;
+remain untested by any PoC. Veto now has five PoC runs' worth of evidence
+([poc-raci-veto.md](docs/learning/poc-raci-veto.md)) and all three Concur variants tried are settled
+dead: the original single-shot prompt has no stopping condition (a positive control got rejected every
+time, on a genuinely different follow-on gap each time); a sufficiency-instruction fix backfired into
+rubber-stamping thin decisions; a two-step recheck fix (state one concern, then check only that
+concern) looked clean on its positive case but a follow-up found it accepts a bad revision 56% of the
+time, for two distinct, diagnosed reasons (accepting a restated promise as an answer; conflating two
+different security concepts sharing vocabulary). Participation is still unresolved either way (the
+redundancy judge flipped its verdict on identical scenarios between runs). Nowhere near build-ready;
 don't build ahead of evidence, the same discipline that held before question-gating was validated.
 
 Before proposing further platform code structure, read the architecture doc and the PoC findings

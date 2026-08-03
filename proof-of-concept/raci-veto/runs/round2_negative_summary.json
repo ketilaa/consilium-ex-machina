@@ -1,0 +1,47 @@
+[
+  {
+    "slug": "audit-log-retention",
+    "no_attempt_concurs": [
+      false,
+      false,
+      false
+    ],
+    "no_attempt_false_positive": false,
+    "vague_gesture_concurs": [
+      false,
+      false,
+      false
+    ],
+    "vague_gesture_false_positive": false
+  },
+  {
+    "slug": "llm-inference-hosting",
+    "no_attempt_concurs": [
+      true,
+      false,
+      false
+    ],
+    "no_attempt_false_positive": true,
+    "vague_gesture_concurs": [
+      true,
+      true,
+      true
+    ],
+    "vague_gesture_false_positive": true
+  },
+  {
+    "slug": "api-rate-limiting-policy",
+    "no_attempt_concurs": [
+      true,
+      true,
+      true
+    ],
+    "no_attempt_false_positive": true,
+    "vague_gesture_concurs": [
+      true,
+      true,
+      true
+    ],
+    "vague_gesture_false_positive": true
+  }
+]
