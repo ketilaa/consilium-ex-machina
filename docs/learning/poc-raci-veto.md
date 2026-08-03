@@ -7,7 +7,7 @@ CLAUDE.md explicitly defers pending a PoC, the same way question-gating was vali
 built. This PoC tests two distinct claims raised while designing that mechanism, not the ownership table
 itself (unchanged, untested here).
 
-**This document reports three runs.** The first run (2 scenarios) produced a confident, cautionary
+**This document reports four runs.** The first run (2 scenarios) produced a confident, cautionary
 headline: participation restriction looked risky, and Concur looked like it added real value. The
 second run (5 scenarios, including independent re-samples of the first run's own two) does not confirm
 that headline — it complicates it in a way that matters more than additional data points alone,
@@ -15,9 +15,10 @@ surfacing a design flaw in how Concur was tested and showing the redundancy judg
 stable across independent samples of identical scenario text (Findings 1–2). The third run is a
 positive control built directly from the second run's own transcripts — hand-authored decisions
 engineered to concretely close every real, quoted objection Concur had raised — and it turns Finding 1
-from an open question into a settled, structural one (Finding 1, revised). All three runs' raw results
-are kept below rather than silently replaced, because the discrepancy between them is itself the most
-important finding this PoC produced.
+from an open question into a settled, structural one: the prompt has no stopping condition. The fourth
+run tests two candidate fixes for that head-to-head against the original prompt, and finds one works
+and one backfires (Finding 1b). All four runs' raw results are kept below rather than silently replaced,
+because the discrepancy between them is itself the most important finding this PoC produced.
 
 ## Objective
 
@@ -86,8 +87,33 @@ WORM storage, a rehearsed failover drill with numbers, per-role rate limits with
 fail-closed behavior, audit logging of every adjustment). The Concur check (`run_concur_repeats`) is
 run unmodified, 3 times per fixture, against this fixed input.
 
+Fourth run (`sufficiency_test_scenarios.py`, `run_three_way_concur_test.py`): three scenarios, each now
+carrying a **paired** fixture — the same hand-authored `positive_fixture` from run 3, plus a
+`negative_fixture` that is a REAL final decision this PoC actually produced (run 2's raci mechanism for
+`audit-log-retention` and `api-rate-limiting-policy`; run 1's for `llm-inference-hosting`, recovered via
+`git show 8cef25d`) — thin specifically on the Concur-holder's own named grounds, which is why it
+originally got rejected. Three variants of Concur are run against both fixtures:
+
+- **A — original** (`concur_system`), re-run fresh in this pass rather than citing run 3's numbers, so
+  all three variants are compared under identical, freshly-sampled conditions.
+- **B — sufficiency criterion** (`concur_system_with_sufficiency`): one added paragraph naming an
+  explicit stopping condition ("do not withhold concurrence merely because a deeper, more paranoid...
+  question could still be asked... reserve DO NOT CONCUR for a concrete, specific, actionable gap").
+- **C — recheck** (`run_concur_recheck`): structural, not just an instruction, proposed by the user.
+  Round 1 (`concur_system_focused_round1`) reviews the `negative_fixture` cold and states a SINGLE
+  concrete concern (a narrower framing than A/B's open "find fault"). Round 2 (`concur_recheck_system`)
+  is shown ONLY that stated concern plus the `positive_fixture` as "the revision," and judges whether
+  THAT SPECIFIC concern is resolved — explicitly forbidden from raising anything new. The same
+  "ask the specific raiser about its own item, not a generalist reclassifying from scratch" pattern
+  already validated for `issue_react_system`/`question_react_system`, applied to Concur for the first
+  time.
+
+A and B are tested against both fixtures (does it ever approve the thorough one; does it still correctly
+reject the thin one — approving thin content would be the opposite failure mode, equally disqualifying).
+C is inherently a before/after pair, since a recheck is meaningless without something to recheck against.
+
 **Model.** Single model throughout (`bartowski/mistralai_Mistral-Small-3.1-24B-Instruct-2503-GGUF`),
-confirmed to be the identical, continuously-running server process across all three runs (no restart, no
+confirmed to be the identical, continuously-running server process across all four runs (no restart, no
 config change between them) — the discrepancies below are genuine sampling variance and judge behavior,
 not a model change. Full transcripts under `proof-of-concept/raci-veto/runs/<slug>.md`.
 
@@ -114,6 +140,29 @@ Aggregate (runs 1–2): **terminal state differed in 1 of 7 trials.** **Redundan
 | api-rate-limiting-policy-positive-control | Security Reviewer | per-role limits, fail-closed, audit logging, blast-radius containment | DO NOT CONCUR ×3 | No |
 
 **All 9 positive-control calls also said `DO NOT CONCUR` — 30 of 30 across the entire PoC.** But the objections are not repeats: none of the 9 re-raises anything the fixture actually closed (access control, encryption, the tested failover drill, fail-closed behavior, and per-role limits are never re-flagged). Each instead finds a genuinely different, deeper follow-on gap — see Finding 1, revised.
+
+**Run 4 — three variants, paired positive/negative fixtures:**
+
+| Scenario | Variant | Positive fixture approved? | Negative fixture approved? |
+|---|---|---|---|
+| audit-log-retention | A — original | 1/3 (inconsistent) | 0/3 |
+| audit-log-retention | B — sufficiency | 3/3 | **3/3** |
+| audit-log-retention | C — recheck (final) | 3/3 | — (recheck design; see below) |
+| llm-inference-hosting | A — original | 0/3 | 0/3 |
+| llm-inference-hosting | B — sufficiency | 3/3 | **3/3** |
+| llm-inference-hosting | C — recheck (final) | 3/3 | — |
+| api-rate-limiting-policy | A — original | 0/3 | 0/3 |
+| api-rate-limiting-policy | B — sufficiency | 3/3 | **2/3** |
+| api-rate-limiting-policy | C — recheck (final) | 3/3 | — |
+
+Variant C has no separate "negative fixture approved" column because it isn't tested the same way: round 1
+reviews the negative fixture and is *expected* to object (that's what makes it a real recheck, not a
+rubber stamp) — in all 9 repeats across all three scenarios, round 1 did in fact raise a real, single,
+specific concern, never trivially approving the thin fixture. Round 2 then checked only that concern
+against the positive fixture and approved in all 9 — with justification tied concretely to the specific
+concern each time (e.g. *"The revision directly addresses your original concern by specifying that access
+to the archived data will be controlled via role-based access control and audited through a separate,
+append-only access log"*).
 
 ## Findings
 
@@ -143,6 +192,28 @@ thorough, could satisfy that mandate, because thoroughness just moves the object
 than resolving it. The first run's framing of Concur's divergence as "real evidence it isn't redundant"
 undersold this: the actual finding is sharper and worse for the mechanism's viability as built — this
 isn't a data problem more replicates would fix, it's a prompt design that has no exit condition.
+
+**1b. A prompt-only fix (sufficiency criterion) overshoots into rubber-stamping; a structural fix
+(recheck) doesn't.** Run 4 tested both candidate fixes for Finding 1's "no stopping condition" head to
+head, with a negative control specifically to catch overshoot. Variant B (one added paragraph telling
+Concur to approve once grounds are "concretely addressed... not an arbitrarily deeper hypothetical
+attack") did make it approve the thorough fixture reliably (9/9 across all three scenarios) — but it
+also approved the genuinely thin, real final decisions 8 times out of 9, reading vague language as if it
+were concrete: *"meets security, audit, and compliance requirements... clear audit trail"* for a decision
+that never once mentions encryption, names no access-control roles, and describes no compliance review —
+exactly the specifics that decision's real Concur review had originally, correctly objected to. A gate
+that approves almost everything is exactly as useless as one that rejects almost everything; the
+sufficiency criterion just traded one failure mode for its mirror image. Variant C (the two-step recheck)
+did not have this problem: round 1, using a narrower "identify your single most significant concern"
+framing, still raised a real, specific concern against every one of the 9 thin-fixture reviews — it was
+never fooled into approving inadequate content outright. Round 2 then correctly recognized resolution,
+citing the specific mechanism that closed the specific concern it had itself raised, in all 9 cases, with
+no new objections introduced. This is the one variant in this entire PoC that behaves like a genuinely
+discriminating gate rather than a coin that always (or almost always) lands the same way. It reuses,
+rather than invents, the fix already validated for `issue_react_system`/`question_react_system` in
+`poc-decision-making.md` and `poc-question-gating.md` — the third time this project has found the same
+shape of fix (ask the specific party about its own specific item, don't let a generalist or an
+unconstrained single-shot review roam) working for a different mechanism.
 
 **2. The redundancy judge's own verdicts are not stable across independent samples of identical
 scenario text.** Both scenarios repeated from the first run flipped: `audit-log-retention` went `NEW →
@@ -184,33 +255,35 @@ on independent samples — so this PoC cannot currently say whether participatio
 general or whether that one trial was itself noise. That still needs the repeated-same-scenario design
 described below, not more new scenarios.
 
-On Concur: **settled, and negative, for the mechanism as currently designed.** This is no longer an
-open question about insufficient replicates — the positive control shows Concur cannot be satisfied by
-content, however thorough, because its prompt has no stopping condition. A cold reviewer instructed to
-find fault on narrow security/ops grounds, with no criterion for "this is enough," will always find the
-next meta-level gap. That makes it structurally unable to function as an automatic pass/fail gate: it
-would block every decision, including ones a reasonable human would approve without hesitation. This
-doesn't mean the underlying instinct (a domain specialist's cold sign-off catches things a busy
-in-the-loop reviewer misses) is wrong — Finding 1 shows the objections it raises are real and specific,
-not noise — it means **an unbounded critical gate can't be the mechanism**. A workable version would need
-either an explicit sufficiency criterion in the prompt (e.g. "approve once the named grounds are
-concretely addressed; do not require unbounded depth" — untested here), or reframing Concur's output as
-advisory input a human weighs, not a hard block a decision must clear.
+On Concur: **the original design is settled negative, but a specific fix now has real, if preliminary,
+positive evidence.** The unbounded, single-shot cold review (variant A) cannot function as a pass/fail
+gate — it has no stopping condition and will always find the next meta-level gap. The tempting cheap fix
+(add a sufficiency instruction to the same single-shot prompt) makes things worse in a different way: it
+overshoots into approving genuinely inadequate decisions almost as often as good ones, which is not
+progress, it's a different kind of unusable. The structural fix — split into a narrower single-concern
+initial review plus a recheck that only ever judges its own previously-stated concern, exactly the
+pattern already validated twice for ordinary challengers — worked cleanly in this run: it wasn't fooled
+by thin content, and it approved thorough content for the right, specific reasons, every time it was
+tried.
 
-If this mechanism moves forward, the immediate next step is not "run more scenarios like these" — it's
-(a) testing whether an explicit sufficiency criterion changes Concur's behavior (a fourth run, not yet
-done), and (b) for participation, repeated trials of the *same* scenario (not just more scenarios) to
-establish whether the redundancy judge's verdict is a property of the content or a property of the
-sample. Building the current, unbounded version of Concur into the platform would mean building a gate
-this PoC has now shown, directly, cannot be passed.
+That's real signal, not a green light to build yet: this is one run, three scenarios, three repeats each,
+and round 2's ability to correctly still *reject* a revision that does NOT resolve the stated concern was
+never tested here — every round-2 case in this run was the positive fixture, engineered to succeed. The
+next step for Concur specifically is that missing negative case for round 2, not more positive
+demonstrations. For participation, the open question is unchanged: repeated trials of the *same*
+scenario (not just more scenarios) to establish whether the redundancy judge's verdict is a property of
+the content or a property of the sample.
 
 ## Scope limitations of this PoC
 
-- **The positive control tests one specific Concur prompt, not the concept of a cold gate in general.**
-  Finding 1's "no stopping condition" conclusion is about the prompt actually used
-  (`concur_system` in `roles.py`), which never gives the reviewer a sufficiency criterion. A differently
-  worded prompt (e.g. explicitly bounding what "enough" looks like) might behave differently — untested
-  here, and named as the concrete next step in the Verdict.
+- **Round 2 of the recheck variant (C) was never tested against a revision that should still fail.**
+  Every round-2 case in run 4 paired the negative fixture (round 1) with the positive fixture (round 2) —
+  a revision engineered to succeed. Whether round 2 correctly says `DO NOT CONCUR` when a revision does
+  *not* resolve the stated concern is untested; this is the load-bearing gap for trusting variant C, not
+  a nice-to-have.
+- **Variant B's overshoot was checked by re-reading the actual verdict text for 2 of 9 negative-fixture
+  approvals**, not all 9 — the "rubber-stamping vague language" characterization is well-evidenced but
+  not exhaustively graded across every case.
 - **The redundancy judge's verdict is not shown stable under resampling** — Finding 2's two flipped
   re-runs are the entire evidence base for this claim; a larger repeated-trial design (same scenario, many
   independent samples) would be needed to know whether 2/7 vs. 5/7 reflects real scenario properties or
@@ -240,6 +313,11 @@ this PoC has now shown, directly, cannot be passed.
   reruns still said no — but to a different, deeper objection each time, never a repeat. That's not a
   broken gate reciting the same line; it's a gate with no notion of "enough," which is arguably a more
   useful thing to know before building it.
+- **"The cheap fix rubber-stamped garbage; the real fix didn't."** Telling Concur "approve once it's
+  concretely addressed" did get it to approve good decisions — and genuinely thin ones almost as often,
+  reading "seven years is a common standard" as if it were an access-control policy. Splitting the review
+  into "state one concern" then "check only that concern" fixed both directions at once, without ever
+  being asked to distinguish good from bad in a single breath.
 - **"The judge called two different risks the same risk because they shared a word."** Supply-chain
   compromise and ordinary regression risk both involve "rollback" — the redundancy judge conflated them.
   A concrete, checkable instance of exactly the kind of error an aggregate `NEW`/`REDUNDANT` count can't

@@ -194,3 +194,89 @@ def concur_system(role, grounds):
         "exactly 'CONCUR' or 'DO NOT CONCUR', followed by a 2-3 sentence "
         "justification specific to your grounds."
     )
+
+
+def concur_system_with_sufficiency(role, grounds):
+    """Same as concur_system, plus one added paragraph: an explicit sufficiency
+    criterion. Added after the positive control (poc-raci-veto.md Finding 1,
+    revised) found the original prompt has no notion of "enough" -- a fixture
+    engineered to concretely close every one of Concur's own prior objections
+    still got rejected, on a genuinely different, deeper follow-on gap each
+    time, because the prompt only ever instructs it to find fault, never to
+    recognize when fault-finding should stop. This tests whether naming that
+    stopping condition explicitly changes the behavior."""
+    return (
+        f"{MANDATES[role]}\n\n"
+        "You are being asked to CONCUR on a proposed decision, strictly and only "
+        f"on grounds of: {grounds}\n\n"
+        "You have NOT participated in the discussion that produced this decision "
+        "-- you are seeing only the final version below, cold. Your concurrence "
+        "is a required gate: if you do not concur, the decision cannot proceed, "
+        "regardless of how anyone else classified or resolved the concerns raised "
+        "during that discussion. However, concurring or not concurring does not "
+        "make you accountable for the decision's outcome -- that responsibility "
+        "stays with the decision's owner. Judge only the narrow grounds you were "
+        "named for, not the proposal as a whole.\n\n"
+        "SUFFICIENCY CRITERION -- read carefully before judging: your job is not "
+        "to construct the most sophisticated objection you are capable of "
+        "constructing. CONCUR once your named grounds are addressed with "
+        "concrete, specific, real mechanisms (named controls, tested "
+        "procedures, specific numbers or thresholds) rather than vague "
+        "intentions. Do not withhold concurrence merely because a deeper, more "
+        "paranoid, or more hypothetical follow-up question could still be asked "
+        "-- almost any decision can be questioned one level further (who guards "
+        "the guards, what if the safeguard itself is compromised, and so on), "
+        "and endlessly demanding the next level down is not a genuine gap in "
+        "THIS decision, it is a different, open-ended exercise. Reserve DO NOT "
+        "CONCUR for a concrete, specific, actionable gap in what was actually "
+        "proposed -- not for the absence of a defense against an arbitrarily "
+        "deeper hypothetical attack.\n\n"
+        "Answer with a first line of exactly 'CONCUR' or 'DO NOT CONCUR', "
+        "followed by a 2-3 sentence justification specific to your grounds."
+    )
+
+
+def concur_system_focused_round1(role, grounds):
+    """Round 1 of the recheck variant (concur_recheck_system is round 2) --
+    the second half of the user's suggestion: narrow the FIRST review to a
+    single, concrete concern instead of an open invitation to find fault,
+    before also constraining what a follow-up recheck may consider."""
+    return (
+        f"{MANDATES[role]}\n\n"
+        "You are being asked to CONCUR on a proposed decision, strictly and only "
+        f"on grounds of: {grounds}\n\n"
+        "You have NOT participated in the discussion that produced this decision "
+        "-- you are seeing only the final version below, cold. Identify your "
+        "SINGLE most significant, concrete concern on these narrow grounds -- "
+        "not a list, not your most sophisticated hypothetical, but the one gap "
+        "that most concretely and specifically matters given what is actually "
+        "proposed. If you have no such concern, CONCUR. Your concurrence is a "
+        "required gate: if you do not concur, the decision cannot proceed, "
+        "regardless of how anyone else classified or resolved concerns raised "
+        "elsewhere. However, concurring or not concurring does not make you "
+        "accountable for the decision's outcome -- that responsibility stays "
+        "with the decision's owner. Answer with a first line of exactly "
+        "'CONCUR' or 'DO NOT CONCUR', followed by your single concern in 2-3 "
+        "sentences, specific to your grounds."
+    )
+
+
+def concur_recheck_system(role, grounds):
+    """Round 2 of the recheck variant -- the user's core suggestion: forbid
+    introducing anything new. Same shape as issue_react_system/
+    question_react_system (ask the specific raiser whether ITS OWN item is
+    resolved, not a generalist reclassifying from scratch), applied to Concur
+    for the first time."""
+    return (
+        f"{MANDATES[role]}\n\n"
+        "You previously reviewed a proposed decision, strictly on grounds of: "
+        f"{grounds}, and did not concur -- you raised a specific concern "
+        "(quoted below). You have now been shown a revision. Judge ONLY "
+        "whether this revision concretely resolves YOUR OWN previously stated "
+        "concern -- not whether the proposal is good overall, and not any new "
+        "concern that occurs to you now, even if it seems valid. A new concern "
+        "is out of scope for this recheck; only your original concern is being "
+        "rechecked here. Answer with a first line of exactly 'CONCUR' or 'DO "
+        "NOT CONCUR', followed by a 2-3 sentence justification referencing "
+        "your original concern specifically."
+    )

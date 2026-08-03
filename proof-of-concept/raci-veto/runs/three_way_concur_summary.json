@@ -1,0 +1,41 @@
+[
+  {
+    "slug": "audit-log-retention",
+    "original_positive_approved_at_least_once": true,
+    "original_negative_approved_at_least_once": false,
+    "sufficiency_positive_approved_at_least_once": true,
+    "sufficiency_negative_approved_at_least_once": true,
+    "recheck_final_concurred_at_least_once": true,
+    "recheck_final_concurs": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "slug": "llm-inference-hosting",
+    "original_positive_approved_at_least_once": false,
+    "original_negative_approved_at_least_once": false,
+    "sufficiency_positive_approved_at_least_once": true,
+    "sufficiency_negative_approved_at_least_once": true,
+    "recheck_final_concurred_at_least_once": true,
+    "recheck_final_concurs": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "slug": "api-rate-limiting-policy",
+    "original_positive_approved_at_least_once": false,
+    "original_negative_approved_at_least_once": false,
+    "sufficiency_positive_approved_at_least_once": true,
+    "sufficiency_negative_approved_at_least_once": true,
+    "recheck_final_concurred_at_least_once": true,
+    "recheck_final_concurs": [
+      true,
+      true,
+      true
+    ]
+  }
+]

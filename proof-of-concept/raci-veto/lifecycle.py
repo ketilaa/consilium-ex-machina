@@ -32,7 +32,9 @@ from llm_client import OWNER_MODEL, SUPPORT_MODEL, chat
 from roles import (
     challenger_react_system,
     classifier_system_3way,
+    concur_recheck_system,
     concur_system,
+    concur_system_focused_round1,
     issue_react_system,
     owner_propose_system,
     owner_revise_system,
@@ -178,19 +180,23 @@ def _concurs(verdict_text):
     return stripped.startswith("CONCUR") and not stripped.startswith("DO NOT CONCUR")
 
 
-def run_concur_check(scenario, final_decision):
+def run_concur_check(scenario, final_decision, concur_prompt_fn=concur_system):
+    """`concur_prompt_fn` defaults to the original, unmodified concur_system --
+    every existing call site keeps behaving exactly as before. Overridable so a
+    variant prompt (e.g. one with an explicit sufficiency criterion) can be
+    tested through the identical mechanism, for a clean side-by-side comparison."""
     role = scenario["concur_role"]
     grounds = scenario["concur_grounds"]
     verdict = chat(
         SUPPORT_MODEL,
-        concur_system(role, grounds),
+        concur_prompt_fn(role, grounds),
         f"{_brief(scenario)}\n\nFinal decision as it stands:\n{final_decision}",
         max_tokens=300,
     )["content"]
     return verdict, _concurs(verdict)
 
 
-def run_concur_repeats(scenario, final_decision, n=3):
+def run_concur_repeats(scenario, final_decision, n=3, concur_prompt_fn=concur_system):
     """Question 3: is a Concur divergence principled and repeatable, or noise?
     Reruns the identical cold review n times against the identical final
     decision -- consistent verdicts across reruns is signal, scattershot is not.
@@ -198,7 +204,56 @@ def run_concur_repeats(scenario, final_decision, n=3):
     verdicts = []
     concurs = []
     for _ in range(n):
-        verdict, concurs_flag = run_concur_check(scenario, final_decision)
+        verdict, concurs_flag = run_concur_check(scenario, final_decision, concur_prompt_fn)
         verdicts.append(verdict)
         concurs.append(concurs_flag)
     return verdicts, concurs
+
+
+def run_concur_recheck(scenario, before_decision, after_decision):
+    """The recheck variant: round 1 states a SINGLE concrete concern against
+    `before_decision` (concur_system_focused_round1); round 2 shows ONLY that
+    concern plus `after_decision` and asks whether THAT SPECIFIC concern is
+    resolved (concur_recheck_system), explicitly forbidden from raising
+    anything new -- the same "ask the specific raiser about its own item"
+    pattern validated for issue_react_system/question_react_system, applied to
+    Concur for the first time. If round 1 already concurs, round 2 is skipped
+    -- there is nothing to recheck."""
+    role = scenario["concur_role"]
+    grounds = scenario["concur_grounds"]
+
+    round1_verdict = chat(
+        SUPPORT_MODEL,
+        concur_system_focused_round1(role, grounds),
+        f"{_brief(scenario)}\n\nFinal decision as it stands:\n{before_decision}",
+        max_tokens=300,
+    )["content"]
+    round1_concurs = _concurs(round1_verdict)
+
+    if round1_concurs:
+        return {
+            "round1_verdict": round1_verdict,
+            "round1_concurs": True,
+            "round2_verdict": None,
+            "round2_concurs": None,
+            "final_concurs": True,
+        }
+
+    round2_verdict = chat(
+        SUPPORT_MODEL,
+        concur_recheck_system(role, grounds),
+        (
+            f"{_brief(scenario)}\n\nYour original concern:\n{round1_verdict}\n\n"
+            f"Revised decision:\n{after_decision}"
+        ),
+        max_tokens=300,
+    )["content"]
+    round2_concurs = _concurs(round2_verdict)
+
+    return {
+        "round1_verdict": round1_verdict,
+        "round1_concurs": False,
+        "round2_verdict": round2_verdict,
+        "round2_concurs": round2_concurs,
+        "final_concurs": round2_concurs,
+    }
