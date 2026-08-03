@@ -1,12 +1,32 @@
 [
   {
     "slug": "audit-log-retention",
+    "baseline_state": "converged",
+    "raci_state": "converged",
+    "terminal_state_differs": false,
+    "informed_role": "Performance Reviewer",
+    "expected_informed_signal": "redundant",
+    "informed_reaction_judged_new": false,
+    "prediction_matched_judgment": true,
+    "concur_role": "Security Reviewer",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_diverged_from_clean_raci_convergence": true
+  },
+  {
+    "slug": "llm-inference-hosting",
     "baseline_state": "escalated_to_human",
     "raci_state": "escalated_to_human",
     "terminal_state_differs": false,
-    "informed_role": "Performance Reviewer",
-    "informed_reaction_judged_new": true,
-    "concur_role": "Security Reviewer",
+    "informed_role": "Security Reviewer",
+    "expected_informed_signal": "novel",
+    "informed_reaction_judged_new": false,
+    "prediction_matched_judgment": false,
+    "concur_role": "Release Manager",
     "concur_verdicts": [
       false,
       false,
@@ -16,13 +36,51 @@
     "concur_diverged_from_clean_raci_convergence": false
   },
   {
-    "slug": "llm-inference-hosting",
-    "baseline_state": "escalated_to_human",
+    "slug": "schema-migration-gate",
+    "baseline_state": "converged",
     "raci_state": "converged",
-    "terminal_state_differs": true,
+    "terminal_state_differs": false,
+    "informed_role": "Performance Reviewer",
+    "expected_informed_signal": "redundant",
+    "informed_reaction_judged_new": false,
+    "prediction_matched_judgment": true,
+    "concur_role": "Security Reviewer",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_diverged_from_clean_raci_convergence": true
+  },
+  {
+    "slug": "dependency-upgrade-policy",
+    "baseline_state": "converged",
+    "raci_state": "converged",
+    "terminal_state_differs": false,
     "informed_role": "Security Reviewer",
-    "informed_reaction_judged_new": true,
-    "concur_role": "Release Manager",
+    "expected_informed_signal": "novel",
+    "informed_reaction_judged_new": false,
+    "prediction_matched_judgment": false,
+    "concur_role": "Performance Reviewer",
+    "concur_verdicts": [
+      false,
+      false,
+      false
+    ],
+    "concur_consistent": true,
+    "concur_diverged_from_clean_raci_convergence": true
+  },
+  {
+    "slug": "api-rate-limiting-policy",
+    "baseline_state": "converged",
+    "raci_state": "converged",
+    "terminal_state_differs": false,
+    "informed_role": "Release Manager",
+    "expected_informed_signal": "novel",
+    "informed_reaction_judged_new": false,
+    "prediction_matched_judgment": false,
+    "concur_role": "Security Reviewer",
     "concur_verdicts": [
       false,
       false,

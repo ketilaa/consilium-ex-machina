@@ -71,7 +71,14 @@ def render_md(scenario, proposal, baseline, raci, shadow_role, shadow_text, redu
 
     parts.append(f"\n## Question 1: Informed role's shadow reaction ({shadow_role})\n")
     parts.append(f"\n{shadow_text}\n")
+    parts.append(
+        f"\n### Pre-registered expectation: **{scenario['expected_informed_signal'].upper()}**\n"
+    )
     parts.append(f"\n### Redundancy judgment: **{'NEW' if is_new else 'REDUNDANT'}**\n\n{redundancy_verdict}\n")
+    predicted_new = scenario["expected_informed_signal"] == "novel"
+    parts.append(
+        f"\n### Prediction matched judgment? **{'YES' if predicted_new == is_new else 'NO'}**\n"
+    )
     parts.append(
         f"\n### Did excluding {shadow_role} change the terminal state? "
         f"baseline={baseline['state']} vs raci={raci['state']} -> "
@@ -140,7 +147,9 @@ def main():
                 "raci_state": raci["state"],
                 "terminal_state_differs": baseline["state"] != raci["state"],
                 "informed_role": shadow_role,
+                "expected_informed_signal": scenario["expected_informed_signal"],
                 "informed_reaction_judged_new": is_new,
+                "prediction_matched_judgment": (scenario["expected_informed_signal"] == "novel") == is_new,
                 "concur_role": scenario["concur_role"],
                 "concur_verdicts": concurs,
                 "concur_consistent": len(set(concurs)) == 1,
