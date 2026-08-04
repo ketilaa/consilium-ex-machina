@@ -20,10 +20,11 @@ to Concur).
 import re
 
 from llm_client import SUPPORT_MODEL, chat
-from roles import classifier_system_3way, classifier_system_4way_with_risk
+from roles import classifier_system_3way, classifier_system_4way_with_risk, classifier_system_5way_with_work_item
 
 TAG_RE_3WAY = re.compile(r"\[(BLOCKING|NON[-_]BLOCKING|QUESTION)\b", re.IGNORECASE)
 TAG_RE_4WAY = re.compile(r"\[(BLOCKING|NON[-_]BLOCKING|QUESTION|RISK)\b", re.IGNORECASE)
+TAG_RE_5WAY = re.compile(r"\[(BLOCKING|NON[-_]BLOCKING|QUESTION|RISK|WORK[-_]ITEM)\b", re.IGNORECASE)
 
 
 def _brief(scenario):
@@ -34,10 +35,13 @@ def _items_text(items):
     return "\n\n".join(f"Item {i + 1} ({it['role']}):\n{it['text']}" for i, it in enumerate(items))
 
 
-def _parse_tags_positional(classification_text, n_items, tag_re):
+def _parse_tags_positional(classification_text, n_items, tag_re, separator="-"):
     # Same lesson as decision-engine's TagScanningVerdictParser and every prior PoC here:
-    # tolerant of NON-BLOCKING/NON_BLOCKING variance; attribution is positional.
-    tags = [t.upper().replace("_", "-") for t in tag_re.findall(classification_text)]
+    # tolerant of NON-BLOCKING/NON_BLOCKING (and now WORK-ITEM/WORK_ITEM) variance;
+    # attribution is positional. `separator` picks which spelling tags get normalized
+    # to, so it can match whichever form a scenario's ground_truth values use.
+    other = "_" if separator == "-" else "-"
+    tags = [t.upper().replace(other, separator) for t in tag_re.findall(classification_text)]
     if len(tags) < n_items:
         raise ValueError(f"Expected at least {n_items} tags, found {len(tags)} in: {classification_text}")
     return tags[:n_items]
@@ -65,4 +69,21 @@ def run_classify_4way_with_risk(scenario):
         max_tokens=1200,
     )["content"]
     tags = _parse_tags_positional(text, len(items), TAG_RE_4WAY)
+    return text, tags
+
+
+def run_classify_5way_with_work_item(scenario):
+    """Round 2's mechanism under test -- ground_truth values in
+    scenarios_round2.py use underscore-separated WORK_ITEM/NON_BLOCKING, so
+    tags are normalized to that form here (separator="_"), the opposite
+    convention from the 3-way/4-way parsers above."""
+    items = scenario["items"]
+    system = classifier_system_5way_with_work_item(scenario["risk_profile"])
+    text = chat(
+        SUPPORT_MODEL,
+        system,
+        f"{_brief(scenario)}\n\nRaised items:\n{_items_text(items)}",
+        max_tokens=1400,
+    )["content"]
+    tags = _parse_tags_positional(text, len(items), TAG_RE_5WAY, separator="_")
     return text, tags

@@ -72,25 +72,36 @@ written up in `docs/learning/`:
 - [poc-risk-classification.md](docs/learning/poc-risk-classification.md) — grounded in a real, live
   decision this platform produced (d-22ffab13): two of its raised concerns were, on human review,
   judged real but disproportionate to the work item's current risk profile — not blockers, but not
-  dismissible either. Tests adding a fourth classification, RISK, alongside BLOCKING/NON_BLOCKING/
-  QUESTION, asking the same question that mattered for Concur: does it defer genuinely disproportionate
-  concerns without also rubber-stamping real blockers? Cleaner result than any Concur variant got: 0%
-  false-defer rate across three scenarios (including a deliberate correctness-bug trap and a
-  high-pressure production profile designed to tempt over-deferral in both directions), and the five
-  real items from d-22ffab13 classified exactly as the human review already concluded. Recall was
-  imperfect (2 of 13 items) but precisely characterized, not noise — the classifier over-extends its
-  own "never RISK for a correctness defect" guardrail to any flatly-phrased security absence ("has no
-  rate limiting"), while identically-substantive concerns phrased as a conditional scenario ("if X
-  exceeds Y") get classified correctly. A scoped, obvious next fix, not a vague miss.
+  dismissible either. Round 1: adding a fourth classification, RISK, held the critical safety
+  property cleanly (0% false-defer across three scenarios, including a correctness-bug trap and a
+  high-pressure profile testing both overshoot directions) and reproduced the real d-22ffab13
+  judgment call exactly — the cleanest single round in this whole PoC series. Round 2 complicated
+  that considerably: the proposed recall fix (tell the classifier phrasing isn't the test) did
+  nothing, the exact same two items failed the exact same way; adding a fifth classification,
+  WORK_ITEM (unconditional follow-up work, vs. RISK's conditional deferral), turned out to be
+  unreliable on realistic, topically-clustered items (5 of 6 items inconsistent across 3 reps in
+  the real scenario, and a new false-defer channel opened through WORK_ITEM itself, 22% on
+  BLOCKING items); and a fix for treating an already-scheduled future risk-profile change as
+  urgent now worked exactly on its target item, then spilled over into wrongly blocking an
+  unrelated one on the same borrowed reasoning. RISK alone (round 1's original two-way split) still
+  looks solid; the fifth category does not, yet.
 
-No next PoC candidate queued for a new question. If Concur stays a priority, the next step is testing
-whether adding the missing "a promise isn't an answer" safeguard to the recheck's second step actually
-fixes the vague-promise failure mode, against the exact same negative fixtures — the conflation failure
-mode is a harder, more open problem, not obviously fixable the same way. If participation stays a
-priority, repeated trials of the *same* scenario to test whether the redundancy judge's verdict is a
-property of content or of the sample. If RISK classification stays a priority, test whether telling the
-classifier a flatly-phrased absence can still be RISK (judge the harm it enables, not the sentence
-shape) fixes the recall gap without reopening the false-defer rate that held cleanly in this round.
+Next PoC candidate queued: a structured, mandatory threat analysis (STRIDE-style categories, gated
+behind a cheap trigger step that flags only whether a decision has real attack surface at all) as
+an alternative to Security Reviewer's free-text critique, which has been the recurring source of
+unbounded escalation across Concur and now the WORK_ITEM/RISK confusion in risk-classification
+round 2. Untested in both directions: does the trigger step reliably fire on real attack surface
+even when not obviously phrased, and does it correctly stay quiet on decisions with no real
+security relevance.
+
+Other open threads, lower priority right now: if Concur stays a priority, test the missing "a
+promise isn't an answer" safeguard on the recheck's second step (the conflation failure mode is
+harder, not obviously fixable the same way). If participation stays a priority, repeated trials of
+the *same* scenario to test whether the redundancy judge's verdict is a property of content or of
+the sample. If the WORK_ITEM classification stays a priority despite round 2's results, it needs a
+differently-designed round, not a third minor prompt tweak — round 2 already showed that adding
+one more explicit instruction to an already-complicated 5-way prompt doesn't reliably fix the
+specific thing it's aimed at and can spill onto adjacent judgments instead.
 
 ## Platform code
 

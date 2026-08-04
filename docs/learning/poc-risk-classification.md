@@ -10,6 +10,16 @@ option, `RISK`, and asks the one question that matters given this project's own 
 does it become an escape hatch that also waves away real blockers — the same overshoot failure
 [poc-raci-veto.md](poc-raci-veto.md) found when Concur's sufficiency-criterion prompt was tested.
 
+**This document reports two rounds.** Round 1 (below, unchanged) held cleanly on the one property
+that matters most — it never used `RISK` to wave away a real blocker — and found one precise,
+fixable-looking recall gap. Round 2 tested that fix, added a fifth classification (`WORK_ITEM`),
+and added real adversarial pressure the way Concur's testing eventually did. The results are
+substantially more mixed than round 1's clean run: the proposed recall fix did not work at all,
+a new overshoot channel opened up through the new category, and `RISK` vs. `WORK_ITEM` turned out
+to be a genuinely unreliable discrimination on realistic, topically-clustered items — while one
+new fix (an already-scheduled future risk-profile change correctly raising the bar now) worked
+cleanly on its intended target, then over-generalized past it. See §Round 2 below.
+
 ## Objective
 
 1. Does a classifier given a `RISK` option, told the work's current risk profile, and given
@@ -107,7 +117,7 @@ this project's own conversation, 3/3 reps, no variance — the first scenario in
 where the mechanism under test reproduced a real, already-settled human judgment call precisely,
 rather than being compared only against a scenario built to test it.
 
-## Verdict
+## Verdict (round 1 only — revised below)
 
 The core safety property holds cleanly across every trial: this classifier never used `RISK` to
 wave away something that should stay `BLOCKING`. That's the property that actually matters for
@@ -124,10 +134,114 @@ statement can still be `RISK` if the *harm it would enable* is disproportionate 
 risk profile — don't let sentence structure alone push a security absence toward `BLOCKING`. That's
 a testable, scoped follow-up, not a reason to distrust the mechanism's core discriminating power.
 
-This is real, if still single-round, evidence that a `RISK` classification is workable — closer to
-buildable than any variant of Concur got across five rounds of testing. Consistent with this
-project's own discipline, one clean round isn't validation on its own; the recall-phrasing fix
-above is the natural next test before this becomes domain code in `decision-engine`.
+*(Round 2 tested this fix directly — see below. It did not work, which is itself the kind of
+finding round 1's own framing here warned against getting ahead of: "one clean round isn't
+validation on its own" turned out to be exactly the right level of caution.)*
+
+## Round 2: adding WORK_ITEM, testing the recall fix, and real adversarial pressure
+
+**Method.** Extends round 1's scenarios (`scenarios_round2.py`) rather than replacing them — the
+original items are reused verbatim so results are directly comparable:
+
+- One new `WORK_ITEM` ground-truth item added to each of round 1's three scenarios — real,
+  *unconditional* follow-up work (tooling for editing `roles.yaml`; an on-call runbook for
+  replaying a missed webhook; a CI setup for the dashboard's own codebase) that round 1's 4-way
+  classifier had no vocabulary to sort correctly.
+- The exact two items that failed round 1's recall test (`internal-analytics-dashboard`'s
+  rate-limiting and encryption-in-transit items) carried over unchanged, to test round 1's
+  proposed fix directly rather than on new items that might not exercise the same bug.
+- A new scenario, `pilot-program-customer-portal`: a work item currently low-stakes (4 internal
+  test accounts) but with an *already-committed, dated* future risk-profile change (10 external
+  pilot customers onboarding in 6 weeks, at which point real names/emails/billing history start
+  flowing through it). Tests whether a concern tied to that committed change correctly gets
+  treated as urgent now, rather than waved off with `RISK`'s "revisit later" framing.
+- A `consistency-probe` scenario: one deliberately ambiguous item (a UI feature request that could
+  reasonably be `RISK` — conditional on a decision not yet made — or `WORK_ITEM` — real work
+  regardless), no ground truth, run 8 independent times to check whether `RISK` vs. `WORK_ITEM`
+  judgment is stable on a genuinely hard case.
+
+The classifier itself (`classifier_system_5way_with_work_item`) adds `[WORK_ITEM]`, an explicit
+instruction that phrasing (flat statement vs. conditional scenario) is not the test for `RISK`,
+and an instruction that an already-scheduled future risk-profile change should be treated as an
+approaching trigger, not a distant hypothetical.
+
+**Results:**
+
+| Scenario | risk_recall | work_item_recall | false_defer_rate | false_work_item_rate | Per-item consistency (3x) |
+|---|---|---|---|---|---|
+| role-registry-configurability (real) | 0.5 | 0.67 | 0.0 | **0.22** | **5/6 items inconsistent** |
+| payments-webhook-handler | 1.0 | 1.0 | 0.0 | 0.0 | 5/5 identical |
+| internal-analytics-dashboard | 0.33 (unchanged) | 1.0 | 0.0 | 0.0 | 5/5 identical |
+| pilot-program-customer-portal | 0.0 | 0.0 | 0.0 | 0.0 | 3/3 identical |
+
+Consistency probe: **8/8 identical — `BLOCKING`, every time.** Not the RISK/WORK_ITEM split it was
+built to measure; see Finding 6.
+
+## Findings (round 2)
+
+**4. The proposed recall fix did not work — the exact carryover items are unchanged.**
+`internal-analytics-dashboard`'s rate-limiting and encryption items, told explicitly that
+"the wording is not the test," were still classified `BLOCKING` in all 3 reps — identical to
+round 1. Stating the guardrail did not change the behavior it was aimed at, the same lesson
+Concur's sufficiency criterion already taught: an instruction that sounds like it should fix a
+specific failure mode is a hypothesis, not a fix, until it's actually tested against the case it's
+meant to fix.
+
+**5. `RISK` vs. `WORK_ITEM` is not a reliable discrimination on realistic, topically-clustered
+items — and it opened a new overshoot channel.** `role-registry-configurability` (the real
+scenario, all items about the same `roles.yaml` artifact) showed 5 of its 6 items classified
+inconsistently across just 3 reps, and 2 of 9 relevant trials incorrectly waved a true-`BLOCKING`
+item into `WORK_ITEM` — a new false-defer channel round 1 never had, since `WORK_ITEM` didn't
+exist yet. Reading the actual reasoning shows why: asked to classify the genuinely conditional
+deprecated-role item (ground truth `RISK`) and the genuinely unconditional tooling item (ground
+truth `WORK_ITEM`) in the same pass, the model gave both near-identical boilerplate — *"this is a
+legitimate concern that should be addressed, but it does not block the current decision"* — with
+neither invoking the actual distinguishing test (a stated trigger condition vs. a description of
+definite work) that would tell them apart. `WORK_ITEM` is functioning as a generic "defer,
+not urgent" bucket rather than being reserved for the specific, unconditional case it was defined
+for.
+
+**6. The consistency probe was rock-solid, for a reason that reveals a different bug than the one
+it was built to find.** All 8 reps landed on `BLOCKING`, with the stated reason: *"the proposal is
+missing critical implementation details that are necessary to proceed with the decision."* That
+treats *any* unspecified implementation detail as blocking, regardless of the underlying feature's
+own priority (dark mode, an explicitly low-stakes UI request) — a different, more general pattern
+than round 1's "flat absence → correctness defect" bug. The same phrasing shape
+(*"the proposal does not specify what X will be used"*) plausibly explains Finding 7 below too.
+
+**7. The "already-scheduled future change" fix worked exactly as intended on its target item — and
+then over-generalized past it.** The imminent-pilot scenario's PII-logging item correctly stayed
+`BLOCKING` in all 3 reps, explicitly reasoning that the external launch is *"already committed,"*
+not hypothetical — a clean, validated win for that specific fix. But the same reasoning pulled a
+second item (support tooling to look up a pilot customer's account) into `BLOCKING` too, on the
+identical basis (*"they will need this by launch"*) — reasoning that actually describes real,
+scheduled, unconditional work, i.e. the model's own stated logic supports `WORK_ITEM`, not
+`BLOCKING`, yet it concluded `BLOCKING` anyway. An instruction to weigh one factor more heavily
+had a knock-on effect on an adjacent judgment it wasn't aimed at, the same shape of spillover found
+in round 1 (Finding 1) and in Concur's sufficiency criterion.
+
+## Verdict (revised)
+
+Round 1's headline — *"real, if still single-round, evidence that RISK classification is
+workable"* — does not survive round 2 intact. The core safety property that mattered most in
+round 1 (never wave a real blocker into the deferral categories) mostly held: `false_defer_rate`
+stayed 0.0 in all four round-2 scenarios. But `WORK_ITEM` opened a second overshoot channel round 1
+never tested for, and it fired in the one scenario built from real data. The proposed recall fix
+was a plausible-sounding hypothesis that turned out to be simply wrong when actually tested. And
+the discrimination this round was specifically built to add — `RISK` vs. `WORK_ITEM` — is not
+reliable on realistic, clustered items, even though the underlying reasoning in each individual
+case often sounds sensible in isolation.
+
+The one clean, validated result this round — the already-scheduled-future-change fix working on
+its target — came bundled with a spillover effect onto an adjacent item, which is the same lesson
+Concur's own testing kept relearning: a fix that works on the case it was built for is not the
+same claim as a fix that stays scoped to only that case.
+
+Net: this PoC has now had one clean round and one round that complicates it substantially — the
+same shape of trajectory `poc-raci-veto.md` went through with Concur, just compressed into two
+rounds instead of five. `RISK` alone (round 1's original, two-way discrimination against
+`BLOCKING`) still looks solid. Adding a fifth category does not look solid yet, and should not be
+treated as a small increment on top of an already-validated mechanism.
 
 ## Scope limitations of this PoC
 
@@ -148,6 +262,23 @@ above is the natural next test before this becomes domain code in `decision-engi
 - Single model, single grading pass per item (no independent second reviewer of the transcripts
   beyond the two illustrative comparisons quoted in Finding 1).
 
+**Round 2 additions:**
+
+- Findings 5–7 are drawn from 4 scenarios, 3 reps each — the same small-base-rate caveat as
+  round 1, now compounded across two rounds of small samples rather than resolved by them.
+- The consistency probe (Finding 6) tested stability on one ambiguous item, not correctness — it
+  incidentally surfaced a real, differently-shaped bug (implementation-detail-absence read as
+  blocking regardless of the feature's priority) rather than the RISK/WORK_ITEM instability it was
+  built to measure. Whether that instability exists at all is now untested by this probe and would
+  need a differently-worded ambiguous item to actually check.
+- Finding 7's spillover (the pilot scenario's support-tooling item) rests on one scenario, one
+  item — real and directly quoted, but not yet replicated on a second, differently-worded case.
+- No round-2 scenario tested `WORK_ITEM` recall under a demanding, high-pressure risk profile the
+  way `payments-webhook-handler` tested `RISK` in round 1 — the one new scenario with a shifting
+  profile (`pilot-program-customer-portal`) had 0.0 recall for both `RISK` and `WORK_ITEM`, which
+  is itself informative but doesn't establish whether `WORK_ITEM` recall is generally weak or
+  specific to that scenario's spillover effect.
+
 ## Candidate write-ups
 
 - **"The one guardrail that actually held."** Every other proportionality-instruction tested in
@@ -163,3 +294,18 @@ above is the natural next test before this becomes domain code in `decision-engi
   from an actual, already-argued-through live decision, unprompted with the human's own
   conclusion, landed on it anyway, 3 for 3 reps — a rare case in this project where a PoC
   reproduces a real judgment call rather than only testing a constructed one.
+- **"We told it the wording wasn't the test, and it kept failing the exact same way."** Round 2's
+  proposed fix for round 1's precise recall bug was specific, well-targeted, and did nothing —
+  the identical two items, told explicitly to judge harm over sentence shape, gave the identical
+  wrong answer. A clean instance of the gap between "this instruction should fix it" and "this
+  instruction fixed it."
+- **"Two items, one boilerplate answer, two different right answers."** Asked to sort a
+  conditional concern from an unconditional one in the same breath, the model gave both the same
+  sentence — *"should be addressed, but doesn't block"* — and only sometimes bothered to check
+  which one actually applied. Adding a fifth bucket didn't add a fifth kind of reasoning to go
+  with it.
+- **"It got the hard case right and took a bystander down with it."** Told that an already-
+  scheduled future change should raise the bar now, it correctly kept the one item that change
+  was aimed at blocking — then used the identical logic to block a second, unrelated item whose
+  own reasoning actually argued for scheduling it, not blocking it. The fix worked exactly once,
+  precisely on target, and then kept going.

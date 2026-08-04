@@ -1,0 +1,195 @@
+{
+  "scenarios": [
+    {
+      "slug": "role-registry-configurability",
+      "risk_recall": 0.5,
+      "work_item_recall": 0.6666666666666666,
+      "false_defer_rate": 0.0,
+      "false_work_item_rate": 0.2222222222222222,
+      "correct_blocking_rate": 0.7777777777777778,
+      "per_item_tags": [
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "WORK_ITEM"
+        ],
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "WORK_ITEM"
+        ],
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "WORK_ITEM",
+          "RISK",
+          "WORK_ITEM"
+        ],
+        [
+          "RISK",
+          "RISK",
+          "WORK_ITEM"
+        ],
+        [
+          "WORK_ITEM",
+          "WORK_ITEM",
+          "RISK"
+        ]
+      ],
+      "per_item_consistent": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "slug": "payments-webhook-handler",
+      "risk_recall": 1.0,
+      "work_item_recall": 1.0,
+      "false_defer_rate": 0.0,
+      "false_work_item_rate": 0.0,
+      "correct_blocking_rate": 1.0,
+      "per_item_tags": [
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "RISK",
+          "RISK",
+          "RISK"
+        ],
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "WORK_ITEM",
+          "WORK_ITEM",
+          "WORK_ITEM"
+        ]
+      ],
+      "per_item_consistent": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "slug": "internal-analytics-dashboard",
+      "risk_recall": 0.3333333333333333,
+      "work_item_recall": 1.0,
+      "false_defer_rate": 0.0,
+      "false_work_item_rate": 0.0,
+      "correct_blocking_rate": 1.0,
+      "per_item_tags": [
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "RISK",
+          "RISK",
+          "RISK"
+        ],
+        [
+          "WORK_ITEM",
+          "WORK_ITEM",
+          "WORK_ITEM"
+        ]
+      ],
+      "per_item_consistent": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "phrasing_sensitive_carryover": {
+        "The dashboard's admin panel has no rate limiting": [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        "Data in transit between the dashboard and its database is not encrypted": [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ]
+      }
+    },
+    {
+      "slug": "pilot-program-customer-portal",
+      "risk_recall": 0.0,
+      "work_item_recall": 0.0,
+      "false_defer_rate": 0.0,
+      "false_work_item_rate": 0.0,
+      "correct_blocking_rate": 1.0,
+      "per_item_tags": [
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ],
+        [
+          "WORK_ITEM",
+          "WORK_ITEM",
+          "WORK_ITEM"
+        ],
+        [
+          "BLOCKING",
+          "BLOCKING",
+          "BLOCKING"
+        ]
+      ],
+      "per_item_consistent": [
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "consistency_probe": {
+    "slug": "consistency-probe",
+    "tags_across_reps": [
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING"
+    ],
+    "distinct_tags_used": [
+      "BLOCKING"
+    ],
+    "consistent": true
+  }
+}
