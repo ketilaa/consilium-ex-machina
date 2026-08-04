@@ -10,7 +10,7 @@ option, `RISK`, and asks the one question that matters given this project's own 
 does it become an escape hatch that also waves away real blockers — the same overshoot failure
 [poc-raci-veto.md](poc-raci-veto.md) found when Concur's sufficiency-criterion prompt was tested.
 
-**This document reports two rounds.** Round 1 (below, unchanged) held cleanly on the one property
+**This document reports three rounds.** Round 1 (below, unchanged) held cleanly on the one property
 that matters most — it never used `RISK` to wave away a real blocker — and found one precise,
 fixable-looking recall gap. Round 2 tested that fix, added a fifth classification (`WORK_ITEM`),
 and added real adversarial pressure the way Concur's testing eventually did. The results are
@@ -18,7 +18,12 @@ substantially more mixed than round 1's clean run: the proposed recall fix did n
 a new overshoot channel opened up through the new category, and `RISK` vs. `WORK_ITEM` turned out
 to be a genuinely unreliable discrimination on realistic, topically-clustered items — while one
 new fix (an already-scheduled future risk-profile change correctly raising the bar now) worked
-cleanly on its intended target, then over-generalized past it. See §Round 2 below.
+cleanly on its intended target, then over-generalized past it. Round 3 tested the leading
+hypothesis for *why* round 2's `RISK`/`WORK_ITEM` confusion happened — that batching topically
+similar items together caused it — by reclassifying specific items alone. That hypothesis was
+**refuted**: isolation didn't reliably fix the confusion (it improved one item, left one
+unchanged, and made a third strictly worse), while a sharper, more precise diagnosis emerged for
+round 2's spillover finding — see §Round 3 below.
 
 ## Objective
 
@@ -210,14 +215,17 @@ than round 1's "flat absence → correctness defect" bug. The same phrasing shap
 (*"the proposal does not specify what X will be used"*) plausibly explains Finding 7 below too.
 
 **7. The "already-scheduled future change" fix worked exactly as intended on its target item — and
-then over-generalized past it.** The imminent-pilot scenario's PII-logging item correctly stayed
-`BLOCKING` in all 3 reps, explicitly reasoning that the external launch is *"already committed,"*
-not hypothetical — a clean, validated win for that specific fix. But the same reasoning pulled a
-second item (support tooling to look up a pilot customer's account) into `BLOCKING` too, on the
-identical basis (*"they will need this by launch"*) — reasoning that actually describes real,
-scheduled, unconditional work, i.e. the model's own stated logic supports `WORK_ITEM`, not
-`BLOCKING`, yet it concluded `BLOCKING` anyway. An instruction to weigh one factor more heavily
-had a knock-on effect on an adjacent judgment it wasn't aimed at, the same shape of spillover found
+then over-generalized past it.** *(Round 3 refines the mechanism here — see below: it isn't
+spillover from the adjacent item, it's the risk-profile text itself being over-applied. The
+observation stands; the causal story changes.)* The imminent-pilot scenario's PII-logging item
+correctly stayed `BLOCKING` in all 3 reps, explicitly reasoning that the external launch is
+*"already committed,"* not hypothetical — a clean, validated win for that specific fix. But the
+same reasoning pulled a second item (support tooling to look up a pilot customer's account) into
+`BLOCKING` too, on the identical basis (*"they will need this by launch"*) — reasoning that
+actually describes real, scheduled, unconditional work, i.e. the model's own stated logic supports
+`WORK_ITEM`, not `BLOCKING`, yet it concluded `BLOCKING` anyway. An instruction to weigh one factor
+more heavily had a knock-on effect on an adjacent judgment it wasn't aimed at, the same shape of
+spillover found
 in round 1 (Finding 1) and in Concur's sufficiency criterion.
 
 ## Verdict (revised)
@@ -242,6 +250,92 @@ same shape of trajectory `poc-raci-veto.md` went through with Concur, just compr
 rounds instead of five. `RISK` alone (round 1's original, two-way discrimination against
 `BLOCKING`) still looks solid. Adding a fifth category does not look solid yet, and should not be
 treated as a small increment on top of an already-validated mechanism.
+
+## Round 3: does isolating items from their batch fix the RISK/WORK_ITEM confusion?
+
+**Method.** Round 2's leading hypothesis for its central failure (Finding 5) was that classifying
+several topically-similar items together caused the model to reach for the same boilerplate
+regardless of which one was actually conditional. Round 3 tests this directly, without touching
+the prompt again: the exact same items from round 2 (`scenarios_round2.py`, no new content),
+reclassified one at a time, completely alone, with no other item present
+(`run_classify_5way_isolated`). Three groups:
+
+- **H1 (batching) — the broken items.** `role-registry-configurability`'s three items that showed
+  confusion in batch (two `RISK`, one `WORK_ITEM`), reclassified alone. If batching was the cause,
+  isolation should fix these.
+- **H1 controls.** Four items from other scenarios that were already correct and fully consistent
+  in batch — isolation should not break these.
+- **H2 (phrasing) — independent check.** The two flatly-phrased items that failed round 1 *and*
+  round 2's much smaller batch (`internal-analytics-dashboard`'s rate-limiting and encryption
+  items) — these were never part of the batching-conflation story, so isolation is predicted to
+  leave them unchanged.
+- **H3 (spillover) — the pilot scenario's support-tooling item**, reclassified with the adjacent
+  PII-logging item (round 2's hypothesized source of the spillover) removed from context entirely,
+  plus the scenario's other item as a secondary check.
+
+**Results:**
+
+| Item | Ground truth | Batch (round 2) | Isolated (round 3) | Verdict |
+|---|---|---|---|---|
+| role-registry #4 (deprecated roles) | RISK | WORK_ITEM/RISK/WORK_ITEM | WORK_ITEM ×3 | Still wrong, now consistent |
+| role-registry #5 (integrity checks) | RISK | RISK/RISK/WORK_ITEM | BLOCKING/WORK_ITEM/BLOCKING | **Worse** — new tag, less consistent |
+| role-registry #6 (yaml tooling) | WORK_ITEM | WORK_ITEM/WORK_ITEM/RISK | WORK_ITEM ×3 | **Fixed** |
+| 4 H1 controls (already correct) | mixed | all ×3 correct | all ×3 correct | Unchanged, as expected |
+| dashboard #1 (rate limiting) | RISK | BLOCKING ×3 | BLOCKING ×3 | **Unchanged** |
+| dashboard #2 (encryption) | RISK | BLOCKING ×3 | BLOCKING ×3 | **Unchanged** |
+| pilot #2 (localization) | RISK | WORK_ITEM ×3 | BLOCKING/WORK_ITEM/BLOCKING | **Worse** — was stable, now isn't |
+| pilot #3 (support tooling) | WORK_ITEM | BLOCKING ×3 | BLOCKING ×3 | **Unchanged**, refuting spillover |
+
+## Findings (round 3)
+
+**8. The batching hypothesis is refuted — isolation does not reliably fix the RISK/WORK_ITEM
+confusion, and it made things worse more often than better.** Of the three items that failed in
+batch, isolation fixed exactly one (role-registry #6), left one unchanged in correctness while
+locking it onto the wrong answer consistently (role-registry #4 — 1 of 3 correct in batch,
+consistently wrong when alone), and made the third strictly worse, producing a tag (`BLOCKING`)
+that never even appeared for that item in batch. If topically-clustered batching were the
+mechanism causing the confusion, removing the other items should have helped across the board.
+It didn't. Whatever is causing the model to give near-identical boilerplate to a conditional and
+an unconditional concern, it isn't primarily about what else is in the same classification call.
+
+**9. Isolation can actively reduce stability, not just fail to improve it.** `pilot-program-
+customer-portal`'s localization item was perfectly consistent in batch (`WORK_ITEM` ×3, alongside
+two other items) and became unstable when classified alone (`BLOCKING`/`WORK_ITEM`/`BLOCKING`).
+The most plausible reading: seeing other items in the same batch gives the model implicit,
+contrastive calibration — "this one is clearly urgent, that one by comparison isn't" — and removing
+that contrast doesn't yield a cleaner signal, it removes a signal the model may have been actually
+using. Isolating a hard item is not a free way to get a cleaner read on it.
+
+**10. The phrasing bug is confirmed independent of batching, exactly as predicted.** Both
+flatly-phrased security-absence items gave bit-for-bit identical results isolated and batched —
+`BLOCKING` ×3 either way. This is a clean negative result in the useful sense: it rules out one
+candidate explanation (batching) definitively, narrowing where the real fix has to live (in how
+the item's own phrasing gets read, independent of context — still unfixed after two attempts).
+
+**11. Round 2's "spillover" finding was real but mis-diagnosed — the correct mechanism is sharper
+and more useful to know.** The support-tooling item was hypothesized to have absorbed the adjacent
+PII-logging item's "already-committed launch" reasoning during batch classification. Isolated,
+with that adjacent item entirely absent from the prompt, it produced the *identical* verdict
+(`BLOCKING` ×3) with reasoning that never references any other item: *"the proposal is missing a
+critical component for customer support, which is essential for the pilot program."* The model is
+drawing directly on the scenario's own risk-profile text (which states the external launch date)
+and applying urgency to *any* item thematically connected to that transition, independent of
+whether anything else is present to spill over from. The fix this actually calls for is different
+from what round 2's framing implied: not "don't let one item's classification bleed into another,"
+but "an imminent, stated future change should raise the bar only for items whose own harm is
+actually tied to that change, not for every item that happens to relate to the same launch."
+
+## Verdict (round 3)
+
+Round 3 did what a well-designed control round is supposed to do: it killed the leading
+hypothesis rather than confirming it, and in doing so produced a better-targeted diagnosis of a
+different finding than the one it set out to test. Two concrete, useful conclusions: (1) the
+`RISK`/`WORK_ITEM` boundary is unreliable for a reason that isn't batch composition — a genuinely
+open question, not a scoped one anymore — and casual isolation is not a safe workaround, since it
+measurably destabilized two items that were previously stable, in both directions (one improved,
+two got worse). (2) The "future risk-profile change" fix needs to be re-scoped to the *specific*
+item the change actually affects, not the scenario as a whole, before it can be trusted — a
+sharper, smaller, and more testable next fix than "reduce spillover."
 
 ## Scope limitations of this PoC
 
@@ -279,6 +373,21 @@ treated as a small increment on top of an already-validated mechanism.
   is itself informative but doesn't establish whether `WORK_ITEM` recall is generally weak or
   specific to that scenario's spillover effect.
 
+**Round 3 additions:**
+
+- 11 items, no reps beyond the standard 3 — enough to refute the batching hypothesis cleanly (a
+  consistent pattern across three "broken" items, not one ambiguous case) but not enough to fully
+  characterize what *does* cause the confusion, which remains an open question after this round.
+- Finding 9 (isolation reducing stability) rests on one item (pilot #2) moving from stable to
+  unstable — real and directly observed, but a sample of one; whether this generalizes or was a
+  one-off needs more items tested both ways to say confidently.
+- This round only tested items already known to be problematic or already known to work from
+  round 2 — it did not test whether isolation changes behavior on entirely fresh items, so it
+  can't rule out isolation helping in cases this PoC hasn't looked at.
+- Finding 11's refined diagnosis (risk-profile text over-applied per-item, not spillover between
+  items) is drawn from one scenario's risk-profile wording — untested whether a differently-worded
+  future-change statement produces the same over-broad application.
+
 ## Candidate write-ups
 
 - **"The one guardrail that actually held."** Every other proportionality-instruction tested in
@@ -309,3 +418,13 @@ treated as a small increment on top of an already-validated mechanism.
   was aimed at blocking — then used the identical logic to block a second, unrelated item whose
   own reasoning actually argued for scheduling it, not blocking it. The fix worked exactly once,
   precisely on target, and then kept going.
+- **"We isolated it to find the cause, and the cause wasn't there."** The obvious next move after
+  round 2 was to separate the confused items from their neighbors and watch the confusion
+  disappear. It didn't — one item improved, one got worse, one stayed wrong. The tidy explanation
+  was wrong; the untidy truth (something about the RISK/WORK_ITEM boundary itself, not what else
+  is in the room) is more useful to know.
+- **"Taking the other item out of the room didn't change its mind."** The support-tooling item was
+  supposed to have caught its urgency from sitting next to the PII-logging item in the same batch.
+  Alone, with that item gone entirely, it gave the identical answer for the identical reason — the
+  launch date, read straight off the risk profile, applied to anything nearby in theme. Nothing
+  spilled from item to item; the profile text itself was doing this to every item it touched.

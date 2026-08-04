@@ -87,3 +87,23 @@ def run_classify_5way_with_work_item(scenario):
     )["content"]
     tags = _parse_tags_positional(text, len(items), TAG_RE_5WAY, separator="_")
     return text, tags
+
+
+def run_classify_5way_isolated(scenario, item):
+    """Round 3: classifies ONE item alone, with no other items from its
+    original scenario present -- tests whether round 2's RISK/WORK_ITEM
+    confusion (near-identical boilerplate applied to a conditional and an
+    unconditional concern classified in the same batch) is caused by
+    batching topically-similar items together, or is a property of the
+    RISK/WORK_ITEM distinction itself regardless of what else is being
+    classified alongside it. Same system prompt, same risk profile, same
+    decision brief as the batch mechanism -- only the item set differs."""
+    system = classifier_system_5way_with_work_item(scenario["risk_profile"])
+    text = chat(
+        SUPPORT_MODEL,
+        system,
+        f"{_brief(scenario)}\n\nRaised items:\n{_items_text([item])}",
+        max_tokens=500,
+    )["content"]
+    tags = _parse_tags_positional(text, 1, TAG_RE_5WAY, separator="_")
+    return text, tags[0]

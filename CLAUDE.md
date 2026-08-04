@@ -83,16 +83,26 @@ written up in `docs/learning/`:
   the real scenario, and a new false-defer channel opened through WORK_ITEM itself, 22% on
   BLOCKING items); and a fix for treating an already-scheduled future risk-profile change as
   urgent now worked exactly on its target item, then spilled over into wrongly blocking an
-  unrelated one on the same borrowed reasoning. RISK alone (round 1's original two-way split) still
-  looks solid; the fifth category does not, yet.
+  unrelated one on the same borrowed reasoning. Round 3 tested the leading hypothesis for that
+  confusion — that batching topically-similar items together caused it — by reclassifying the
+  same items alone. Refuted: isolation fixed one item, left one wrong-but-now-consistent, and
+  made a third strictly worse with a tag that never appeared in batch. It also sharpened round 2's
+  "spillover" finding into something more precise: the support-tooling item stayed wrongly blocked
+  even with the adjacent item removed entirely, reasoning straight off the risk-profile text
+  itself rather than off any neighboring item — the future-change fix over-applies to anything
+  thematically connected to a stated transition, not to whatever happens to be nearby in a batch.
+  RISK alone (round 1's original two-way split) still looks solid; the fifth category's problem is
+  now known not to be about batching, but what actually causes it is still open.
 
 Next PoC candidate queued: a structured, mandatory threat analysis (STRIDE-style categories, gated
 behind a cheap trigger step that flags only whether a decision has real attack surface at all) as
 an alternative to Security Reviewer's free-text critique, which has been the recurring source of
-unbounded escalation across Concur and now the WORK_ITEM/RISK confusion in risk-classification
-round 2. Untested in both directions: does the trigger step reliably fire on real attack surface
-even when not obviously phrased, and does it correctly stay quiet on decisions with no real
-security relevance.
+unbounded escalation across Concur and now the WORK_ITEM/RISK confusion in risk-classification.
+Untested in both directions: does the trigger step reliably fire on real attack surface even when
+not obviously phrased, and does it correctly stay quiet on decisions with no real security
+relevance. If RISK/WORK_ITEM stays a priority instead, round 3 ruled out batching as the cause but
+didn't find the real one — casual isolation isn't a safe fix either, since it measurably
+destabilized a previously-stable item.
 
 Other open threads, lower priority right now: if Concur stays a priority, test the missing "a
 promise isn't an answer" safeguard on the recheck's second step (the conflation failure mode is

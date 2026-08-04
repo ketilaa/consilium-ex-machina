@@ -1,0 +1,211 @@
+[
+  {
+    "scenario_slug": "role-registry-configurability",
+    "item_index": 3,
+    "hypothesis": "H1-broken",
+    "ground_truth": "RISK",
+    "batch_tags": [
+      "WORK_ITEM",
+      "RISK",
+      "WORK_ITEM"
+    ],
+    "batch_correct_count": 1,
+    "isolated_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "WORK_ITEM"
+    ],
+    "isolated_correct_count": 0,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "role-registry-configurability",
+    "item_index": 4,
+    "hypothesis": "H1-broken",
+    "ground_truth": "RISK",
+    "batch_tags": [
+      "RISK",
+      "RISK",
+      "WORK_ITEM"
+    ],
+    "batch_correct_count": 2,
+    "isolated_tags": [
+      "BLOCKING",
+      "WORK_ITEM",
+      "BLOCKING"
+    ],
+    "isolated_correct_count": 0,
+    "isolated_consistent": false
+  },
+  {
+    "scenario_slug": "role-registry-configurability",
+    "item_index": 5,
+    "hypothesis": "H1-broken",
+    "ground_truth": "WORK_ITEM",
+    "batch_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "RISK"
+    ],
+    "batch_correct_count": 2,
+    "isolated_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "WORK_ITEM"
+    ],
+    "isolated_correct_count": 3,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "payments-webhook-handler",
+    "item_index": 2,
+    "hypothesis": "H1-control",
+    "ground_truth": "RISK",
+    "batch_tags": [
+      "RISK",
+      "RISK",
+      "RISK"
+    ],
+    "batch_correct_count": 3,
+    "isolated_tags": [
+      "RISK",
+      "RISK",
+      "RISK"
+    ],
+    "isolated_correct_count": 3,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "payments-webhook-handler",
+    "item_index": 4,
+    "hypothesis": "H1-control",
+    "ground_truth": "WORK_ITEM",
+    "batch_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "WORK_ITEM"
+    ],
+    "batch_correct_count": 3,
+    "isolated_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "WORK_ITEM"
+    ],
+    "isolated_correct_count": 3,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "internal-analytics-dashboard",
+    "item_index": 3,
+    "hypothesis": "H1-control",
+    "ground_truth": "RISK",
+    "batch_tags": [
+      "RISK",
+      "RISK",
+      "RISK"
+    ],
+    "batch_correct_count": 3,
+    "isolated_tags": [
+      "RISK",
+      "RISK",
+      "RISK"
+    ],
+    "isolated_correct_count": 3,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "internal-analytics-dashboard",
+    "item_index": 4,
+    "hypothesis": "H1-control",
+    "ground_truth": "WORK_ITEM",
+    "batch_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "WORK_ITEM"
+    ],
+    "batch_correct_count": 3,
+    "isolated_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "WORK_ITEM"
+    ],
+    "isolated_correct_count": 3,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "internal-analytics-dashboard",
+    "item_index": 0,
+    "hypothesis": "H2-phrasing",
+    "ground_truth": "RISK",
+    "batch_tags": [
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING"
+    ],
+    "batch_correct_count": 0,
+    "isolated_tags": [
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING"
+    ],
+    "isolated_correct_count": 0,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "internal-analytics-dashboard",
+    "item_index": 1,
+    "hypothesis": "H2-phrasing",
+    "ground_truth": "RISK",
+    "batch_tags": [
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING"
+    ],
+    "batch_correct_count": 0,
+    "isolated_tags": [
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING"
+    ],
+    "isolated_correct_count": 0,
+    "isolated_consistent": true
+  },
+  {
+    "scenario_slug": "pilot-program-customer-portal",
+    "item_index": 1,
+    "hypothesis": "H3-spillover-context",
+    "ground_truth": "RISK",
+    "batch_tags": [
+      "WORK_ITEM",
+      "WORK_ITEM",
+      "WORK_ITEM"
+    ],
+    "batch_correct_count": 0,
+    "isolated_tags": [
+      "BLOCKING",
+      "WORK_ITEM",
+      "BLOCKING"
+    ],
+    "isolated_correct_count": 0,
+    "isolated_consistent": false
+  },
+  {
+    "scenario_slug": "pilot-program-customer-portal",
+    "item_index": 2,
+    "hypothesis": "H3-spillover",
+    "ground_truth": "WORK_ITEM",
+    "batch_tags": [
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING"
+    ],
+    "batch_correct_count": 0,
+    "isolated_tags": [
+      "BLOCKING",
+      "BLOCKING",
+      "BLOCKING"
+    ],
+    "isolated_correct_count": 0,
+    "isolated_consistent": true
+  }
+]
