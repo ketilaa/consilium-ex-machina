@@ -10,7 +10,7 @@ option, `RISK`, and asks the one question that matters given this project's own 
 does it become an escape hatch that also waves away real blockers — the same overshoot failure
 [poc-raci-veto.md](poc-raci-veto.md) found when Concur's sufficiency-criterion prompt was tested.
 
-**This document reports three rounds.** Round 1 (below, unchanged) held cleanly on the one property
+**This document reports four rounds.** Round 1 (below, unchanged) held cleanly on the one property
 that matters most — it never used `RISK` to wave away a real blocker — and found one precise,
 fixable-looking recall gap. Round 2 tested that fix, added a fifth classification (`WORK_ITEM`),
 and added real adversarial pressure the way Concur's testing eventually did. The results are
@@ -23,7 +23,11 @@ hypothesis for *why* round 2's `RISK`/`WORK_ITEM` confusion happened — that ba
 similar items together caused it — by reclassifying specific items alone. That hypothesis was
 **refuted**: isolation didn't reliably fix the confusion (it improved one item, left one
 unchanged, and made a third strictly worse), while a sharper, more precise diagnosis emerged for
-round 2's spillover finding — see §Round 3 below.
+round 2's spillover finding — see §Round 3 below. Round 4 tested the other open variable this PoC
+had flagged from its first round and never controlled for: model tier. Same prompt, same items,
+a genuinely stronger model (Groq-hosted `openai/gpt-oss-120b`, ~120B params, vs. the local ~24B
+quantized model used everywhere else in this series). The result is a real, mixed signal rather
+than a clean answer either way — see §Round 4.
 
 ## Objective
 
@@ -337,6 +341,79 @@ two got worse). (2) The "future risk-profile change" fix needs to be re-scoped t
 item the change actually affects, not the scenario as a whole, before it can be trusted — a
 sharper, smaller, and more testable next fix than "reduce spillover."
 
+## Round 4: does model tier fix what rounds 2-3 couldn't?
+
+**Method.** Every round of this PoC has run one local, ~24B-parameter, Q4_K_M-quantized model
+(`bartowski/mistralai_Mistral-Small-3.1-24B-Instruct-2503-GGUF`) in every role, and every write-up
+in this project has flagged model capability as a real, untested variable. Round 4 tests it
+directly: the identical classifier prompt (`classifier_system_5way_with_work_item`), the
+identical four scenarios and items from round 2, run through `openai/gpt-oss-120b` (Groq-hosted,
+~120B params) instead. One pass per scenario rather than the usual three reps — the API key used
+for this test was short-lived, and a real, hard constraint showed up mid-run: Groq's `on_demand`
+tier caps `openai/gpt-oss-120b` at 8000 tokens/minute, hit after 3 of 4 scenarios on the first
+attempt (this model spends substantial tokens on hidden reasoning before any visible output — a
+smoke test needed 50 reasoning tokens just to answer "OK"). The fourth scenario was obtained after
+a short wait for the rate-limit window to reset. Scored against the same ground truth as rounds
+2-3, and directly against the local model's round-2 majority-vote result per item.
+
+**Results:** 16 of 19 items correct (84%) vs. local's 14 of 19 by majority vote (74%) — a real
+difference, but the item-by-item pattern matters far more than the aggregate:
+
+| Item | Ground truth | Local (3x, round 2) | Groq (1x) | Outcome |
+|---|---|---|---|---|
+| dashboard #1 (rate limiting) | RISK | BLOCKING ×3 (wrong, both rounds 1 & 3) | **RISK** | **Fixed** — the phrasing bug, unfixed after 2 prompt attempts and confirmed independent of batching in round 3 |
+| dashboard #2 (encryption) | RISK | BLOCKING ×3 (wrong, both rounds 1 & 3) | **RISK** | **Fixed** — same bug, same fix |
+| pilot #3 (support tooling) | WORK_ITEM | BLOCKING ×3 (wrong, both round 2 and isolated in round 3) | **WORK_ITEM** | **Fixed** — the risk-profile over-application bug from Finding 11 |
+| payments #4 (migration rollback) | BLOCKING | BLOCKING ×3 (correct, every rep) | **WORK_ITEM** | **New false-defer** — the local model never got this wrong |
+| role-registry #4 (deprecated roles) | RISK | mostly WORK_ITEM (wrong) | WORK_ITEM | Unchanged — same wrong answer as local |
+| pilot #2 (localization) | RISK (flagged as debatable when designed) | WORK_ITEM ×3 | NON_BLOCKING | A third distinct answer — reinforces that this item's ground truth was genuinely underspecified, not that either model is simply wrong |
+| 13 other items | mixed | correct | correct | Unchanged, both models agree and both are right |
+
+## Findings (round 4)
+
+**12. Model tier fixed two of round 2-3's three confirmed, persistent bugs — on the first try, no
+prompt change.** Both phrasing-bug items (Finding 1, reconfirmed independent of batching in
+Finding 10) and the risk-profile over-application item (Finding 11, confirmed not caused by
+adjacency in Finding 11) were classified correctly by the stronger model, cold. These are not
+close calls or reinterpretations — they are the exact three items this PoC spent two full rounds
+failing to fix by changing the prompt. A different model fixed two of them immediately.
+
+**13. Model tier also introduced a new failure the local model never made, on the single
+safety property this whole PoC exists to protect.** `payments-webhook-handler`'s migration-
+rollback item — real, current, correctly `BLOCKING` in all 3 local-model reps across every round
+— got waved into `WORK_ITEM` by the stronger model. That is a false-defer, the exact failure mode
+whose absence (0% across every round with the local model) was this PoC's central, load-bearing
+safety claim. One data point is not a rate, but it is proof the property does not transfer
+automatically with a stronger model — it would need its own dedicated validation, the same
+adversarial rigor spent establishing it locally, before being trusted with any new model.
+
+**14. The one item all three conditions disagreed on was probably never a fair test.**
+Local said `WORK_ITEM` (3/3, stable); Groq said `NON_BLOCKING`; the pre-registered ground truth
+said `RISK`. Three different, each individually defensible, answers to the same item is a strong
+signal that `pilot-program-customer-portal`'s localization item was under-specified when this
+scenario was designed (already flagged as debatable at the time), not that either model is
+confused.
+
+## Verdict (round 4)
+
+This is genuine, if thin (n=1 per item), evidence for the "mechanism vs. model capability"
+question every prior round of this PoC left open — and the honest answer is **both, and they
+don't trade off cleanly.** Two of round 2-3's confirmed bugs disappeared with a stronger model and
+no other change, which argues real capability headroom was part of what was holding classification
+quality back — good news for any design (like "fully agentic except at important gates") that
+depends on automated classification being trustworthy enough to reduce how often a human needs to
+get involved. But the same stronger model introduced a genuine false-defer on the one property this
+whole PoC treated as non-negotiable, which argues against the conclusion "just use a bigger model
+and trust it more" — the model that fixes more of your known bugs is not guaranteed to be safer on
+the property you care most about, and won't be known to be until it's tested for, the same way it
+took this PoC three rounds to establish for the local model.
+
+For the "fully agentic, gated only at important points" theory this round was designed to inform:
+model tier is a real, worthwhile lever — genuinely worth continued investment — but it is not a
+substitute for validating the specific safety property (false-defer rate) on whatever model
+actually ends up running the classifier. That validation doesn't get cheaper or more optional
+just because the model is stronger.
+
 ## Scope limitations of this PoC
 
 - Three scenarios, 3 reps each, single round — the same "one clean run isn't proof" caveat every
@@ -388,6 +465,24 @@ sharper, smaller, and more testable next fix than "reduce spillover."
   items) is drawn from one scenario's risk-profile wording — untested whether a differently-worded
   future-change statement produces the same over-broad application.
 
+**Round 4 additions:**
+
+- **Single pass per item, not the usual 3 reps** — a deliberate, disclosed deviation from this
+  PoC's own methodology, forced by a short-lived API key and an 8000-token/minute rate limit hit
+  mid-run. Every finding in this round is directional signal, not a confirmed rate — the local
+  model's own reported numbers throughout this document (e.g. 0% false-defer) rest on 3x repeated
+  trials specifically because single passes can't establish consistency, and round 4's results
+  should be read with that asymmetry in mind.
+- Only one stronger model was tried (`openai/gpt-oss-120b`); whether other models at similar or
+  different scale reproduce either the fixes or the new false-defer is untested.
+- The new false-defer (Finding 13) is one instance — real and directly observed, not
+  extrapolatable to a rate without repeated trials on that specific item and probably several
+  more like it.
+- This round reused round 2's exact items and prompt unchanged, to isolate model as the only
+  variable — it did not test whether a stronger model changes the calculus on any of the
+  prompt-level fixes already tried and failed with the local model (the phrasing-neutral
+  instruction, the sufficiency criterion shape), which remains open.
+
 ## Candidate write-ups
 
 - **"The one guardrail that actually held."** Every other proportionality-instruction tested in
@@ -428,3 +523,13 @@ sharper, smaller, and more testable next fix than "reduce spillover."
   Alone, with that item gone entirely, it gave the identical answer for the identical reason — the
   launch date, read straight off the risk profile, applied to anything nearby in theme. Nothing
   spilled from item to item; the profile text itself was doing this to every item it touched.
+- **"A bigger model fixed two bugs we couldn't prompt our way out of — and broke the one rule we
+  cared about most."** Cold, first try, no prompt change: both phrasing-bug items and the
+  risk-profile-over-application item, all previously unfixed across three rounds, came back
+  correct. The same run also waved a real, current blocker into "just work for later" — something
+  the smaller model never once did, across every round of this PoC. Bigger isn't safer by default;
+  it's differently wrong.
+- **"Three models, three different answers, one honest conclusion: the question was bad."** Local
+  said work to schedule, Groq said don't even bother tracking it, the humans who designed the test
+  said revisit it later. When every reasonable answer disagrees, the fix isn't a better model or a
+  better prompt — it's a better-specified item.

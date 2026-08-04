@@ -1,0 +1,41 @@
+[
+  {
+    "slug": "role-registry-configurability",
+    "items": [
+      {"item_index": 0, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "WORK_ITEM"], "groq_tag_1x": "BLOCKING", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 1, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "WORK_ITEM"], "groq_tag_1x": "BLOCKING", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 2, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "BLOCKING", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 3, "ground_truth": "RISK", "local_tags_3x": ["WORK_ITEM", "RISK", "WORK_ITEM"], "groq_tag_1x": "WORK_ITEM", "local_majority_correct": false, "groq_correct": false},
+      {"item_index": 4, "ground_truth": "RISK", "local_tags_3x": ["RISK", "RISK", "WORK_ITEM"], "groq_tag_1x": "RISK", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 5, "ground_truth": "WORK_ITEM", "local_tags_3x": ["WORK_ITEM", "WORK_ITEM", "RISK"], "groq_tag_1x": "WORK_ITEM", "local_majority_correct": true, "groq_correct": true}
+    ]
+  },
+  {
+    "slug": "payments-webhook-handler",
+    "items": [
+      {"item_index": 0, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "BLOCKING", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 1, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "BLOCKING", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 2, "ground_truth": "RISK", "local_tags_3x": ["RISK", "RISK", "RISK"], "groq_tag_1x": "RISK", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 3, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "WORK_ITEM", "local_majority_correct": true, "groq_correct": false},
+      {"item_index": 4, "ground_truth": "WORK_ITEM", "local_tags_3x": ["WORK_ITEM", "WORK_ITEM", "WORK_ITEM"], "groq_tag_1x": "WORK_ITEM", "local_majority_correct": true, "groq_correct": true}
+    ]
+  },
+  {
+    "slug": "internal-analytics-dashboard",
+    "items": [
+      {"item_index": 0, "ground_truth": "RISK", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "RISK", "local_majority_correct": false, "groq_correct": true},
+      {"item_index": 1, "ground_truth": "RISK", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "RISK", "local_majority_correct": false, "groq_correct": true},
+      {"item_index": 2, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "BLOCKING", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 3, "ground_truth": "RISK", "local_tags_3x": ["RISK", "RISK", "RISK"], "groq_tag_1x": "RISK", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 4, "ground_truth": "WORK_ITEM", "local_tags_3x": ["WORK_ITEM", "WORK_ITEM", "WORK_ITEM"], "groq_tag_1x": "WORK_ITEM", "local_majority_correct": true, "groq_correct": true}
+    ]
+  },
+  {
+    "slug": "pilot-program-customer-portal",
+    "items": [
+      {"item_index": 0, "ground_truth": "BLOCKING", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "BLOCKING", "local_majority_correct": true, "groq_correct": true},
+      {"item_index": 1, "ground_truth": "RISK", "local_tags_3x": ["WORK_ITEM", "WORK_ITEM", "WORK_ITEM"], "groq_tag_1x": "NON_BLOCKING", "local_majority_correct": false, "groq_correct": false},
+      {"item_index": 2, "ground_truth": "WORK_ITEM", "local_tags_3x": ["BLOCKING", "BLOCKING", "BLOCKING"], "groq_tag_1x": "WORK_ITEM", "local_majority_correct": false, "groq_correct": true}
+    ]
+  }
+]

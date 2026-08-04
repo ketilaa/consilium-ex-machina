@@ -92,7 +92,16 @@ written up in `docs/learning/`:
   itself rather than off any neighboring item — the future-change fix over-applies to anything
   thematically connected to a stated transition, not to whatever happens to be nearby in a batch.
   RISK alone (round 1's original two-way split) still looks solid; the fifth category's problem is
-  now known not to be about batching, but what actually causes it is still open.
+  now known not to be about batching, but what actually causes it is still open. Round 4 finally
+  controlled for the other variable this PoC had flagged since round 1 and never tested: model
+  tier (Groq-hosted openai/gpt-oss-120b, ~120B params, vs. the local ~24B quantized model used
+  everywhere else). Genuine mixed evidence, single-pass given a short-lived API key: two of round
+  2-3's confirmed, twice-unfixed-by-prompting bugs (the phrasing bug, the risk-profile
+  over-application bug) were classified correctly on the first try, no prompt change — but the
+  same run also produced a false-defer (a real, current blocker waved into WORK_ITEM) that the
+  local model never made in any round. Model tier is a real lever, not a substitute for validating
+  the false-defer property specifically on whatever model ends up running this — that validation
+  doesn't get cheaper just because the model is stronger.
 
 Next PoC candidate queued: a structured, mandatory threat analysis (STRIDE-style categories, gated
 behind a cheap trigger step that flags only whether a decision has real attack surface at all) as
